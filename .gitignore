@@ -31,3 +31,4 @@ src/main/resources/rebel.xml
 *.log
 /*.log
 *.lck
+/text/msc
