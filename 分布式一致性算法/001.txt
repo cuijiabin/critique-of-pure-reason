@@ -144,7 +144,7 @@
 
 CAP定理
 
-2000年7月,来自加州大学伯克利分校的Eric Brewer教授在ACM PODC(Principlesof Distributed Computing)会议上,首次提出了著名的CAP猜想,2年后,来自麻省理工学院的 Seth Gilbert和 Nancy Lynch从理论上证明了Brewer教授CAP猜想的可行性,从此,CAP理论正式在学术上成为了分布式计算领域的公认定理,并深深地影响了分布式计算的发展。
+2000年7月,来自加州大学伯克利分校的Eric Brewer教授在ACM PODC(Principles of Distributed Computing)会议上,首次提出了著名的CAP猜想,2年后,来自麻省理工学院的 Seth Gilbert和 Nancy Lynch从理论上证明了Brewer教授CAP猜想的可行性,从此,CAP理论正式在学术上成为了分布式计算领域的公认定理,并深深地影响了分布式计算的发展。
 
 CAP理论告诉我们,一个分布式系统不可能同时满足一致性(C: Consistency),可用性(A: Availability)和分区容错性(P: Partition tolerance)这三个基本需求,最多只能同时满足其中的两项。
 
@@ -185,7 +185,7 @@ CAP定理应用
 
 放弃A
 
-相对于放弃“分区容错性”未说，放弃可用性则正好相反，其做法是一旦系统遇到网络分区或其他故障时,那么受到影响的服务需要等待一定的时间,因此在等待期间系统无法对外提供正常的服务,即不可用
+相对于放弃“分区容错性”来说，放弃可用性则正好相反，其做法是一旦系统遇到网络分区或其他故障时,那么受到影响的服务需要等待一定的时间,因此在等待期间系统无法对外提供正常的服务,即不可用
 
 放弃C
 
