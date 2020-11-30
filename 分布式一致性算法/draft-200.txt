@@ -1,0 +1,3915 @@
+<==========================100start==============================>
+
+[zk: Localhost: 2181(CONNECTED) 0] create /zk-book 123
+Created /zk-book
+执行完上面的命令,就在 ZooKeeper的根节点下创建了一个叫作/zk-book的节点,并且
+节点的数据内容是“123”。另外, create命令的最后一个参数是acl,它是用来进行
+权限控制的,缺省情况下,不做任何权限控制关于 ZooKeeper的权限控制,将在7.1.5
+节中做详细讲解。
+5.2.2读取
+与读取相关的命令包括s命令和set命令。
+ls
+使用s命令,可 ZooKeeper以列出指定节点下的所有子节点。当然,这个命令只能看
+到指定节点下第一级的所有子节点。用法如下:
+path [watch]
+其中,path表示的是指定数据节点的节点路径。
+执行如下命令:
+[zk: Localhost: 2181(CONNECTED) 0]
+[zookeeper]
+第一次部署的 ZooKeeper集群,默认在根节点“”下面有一个叫作zookeeper的保留节
+点。
+get
+使用get命令,可以获取ZooKeeper指定节点的数据内容和属性信息。用法如下:
+get path [watch]
+执行如下命令:
+[zk: Localhost: 2181(CONNECTED)0] get /zk-book
+123
+cZxid =Oxa
+ctime= Thu Jun2010:35:00utC2013
+mZxid Oxa
+mtime =Thu Jun 20 10: 35: 00 UTC 2013
+pZxid Oxa
+cversion =0
+52客户端脚本89
+
+<==========================100end ==============================>
+<==========================101start==============================>
+
+dataVersion=0
+aclVersion =0
+ephemeralOwner 0x0
+dataLength =3
+numChildren=
+从上面的输出信息中,我们可以看到,第一行是节点/zk-book的数据内容,其他几行则
+是创建该节点的事务ID(eZxid)、最后一次更新该节点的事务ID(mZxid)和最后一次
+更新该节点的时间(mtime)等属性信息关于 ZooKeeper节点的数据结构,将在7.1.2
+节中做详细讲解。
+5.2.3更新
+使用set命令,可以更新指定节点的数据内容。用法如下:
+set path data [version]
+其中,data就是要更新的新内容。注意set命令后面还有一个 version参数,在
+ZooKeeper中,节点的数据是有版本概念的,这个参数用于指定本次更新操作是基于
+ZNode的哪一个数据版本进行的。
+执行如下命令:
+[zk: localhost: 2181(CONNECTED) 3] set /zk-book 456
+CZxid =Oxa
+ctime =Thu Jun 20 10: 35: 00 UTC 2013
+mZxid 0x11
+mtime= Fri Jun2101:05:49utc2013
+pZxid=0xa
+cversion =0
+dataVersion =1
+aclVersion=
+ephemeralOwner =0x0
+dataLength =3
+numChildren=0
+执行完以上命令后,节点/zk-book的数据内容就已经被更新成“456”了。细心的读者还
+会发现,在输出信息中, dataVersion的值由原来的0变成了1,这是因为刚才的更
+新操作导致该节点的数据版本也发生了变更。关于ZNode的数据版本,将在7.1.3节中
+做详细讲解,这里只是演示简单操作,不再详细展开。
+90第5 ZooKeeper章使用
+
+<==========================101end ==============================>
+<==========================102start==============================>
+
+5.2.4删除
+使用 delete命令,可以删除 ZooKeeepr上的指定节点。用法如下:
+delete path [version]
+此命令中的 version参数和set命令中的 version参数的作用是一致的。
+执行如下命令:
+[zk: localhost: 2181(CONNECTED) 2] delete /zk-book
+执行完以上命令后,就可以把/zk-book这个节点成功删除了。但是这里要注意的一点是,
+要想删除某一个指定节点,该节点必须没有子节点存在。这可以通过执行如下命令来进
+行验证:
+[zk: localhost: 2181(CONNECTED) 7] create /zk-book 123
+Created /zk-book
+[zk: localhost:2181(CONNECTED)8] create/zk-book/child12345
+Created /zk-book/child
+[zk: Localhost: 2181(CONNECTED) 9] delete /zk-book
+Node not empty: /zk-book
+上面的这个输出结果已经很清晰地表明了删除失败,通过 Node not empty这个出错
+信息,可以看出无法删除一个包含子节点的节点。
+5.3Java客户端APl使用
+ZooKeeper作为一个分布式服务框架,主要用来解决分布式数据一致性问题,它提供了
+简单的分布式原语,并且对多种编程语言提供了API下面我们重点来看下 ZooKeeper
+的Java客户端API使用方式。在看本节内容之前,请读者先在博文视点网站
+(http: //www.broadview.com.cn)"" ZooKeeper,的“下载专区”下载本书的源代码:Zooeeper,本节的
+所有样例代码都在book. chapter005包中。
+5.3.1创建会话
+客户端可以通过创建一个 ZooKeeper(org. apache. zookeeper. ZooKeeper)实例
+来连接 ZooKeeper服务器。 ZooKeeper的4种构造方法如下。
+清单5-1. ZooKeeper构造方法
+ZooKeeper(String connectString, int sessionTimeout, Watcher watcher);
+ZooKeeper(String connectString, int sessionTimeout, Watcher watcher, boolean
+5.3java客户端AP使用91
+
+<==========================102end ==============================>
+<==========================103start==============================>
+
+canBeReadOnly);
+ZooKeeper(String connectString, int sessionTimeout, Watcher watcher, long sessionId,
+byte[] sessionPasswd);
+ZooKeeperString connectString, int sessionTime, Watcher watcher, long sessionId,
+byte[] sessionPasswd, boolean canBeReadonly);
+使用任意一个构造方法都可以顺利完成与 ZooKeeper服务器的会话(Session)创建,表
+5-2中列出了对每个参数的说明。
+表5-2. ZooKeeper构造方法参数说明
+参数名
+说明
+指 ZooKeeper服务器列表,由英文状态逗号分开的host:port字符串组成,
+每一个都代表一台 ZooKeeper机器,例如,192.168.1.1:2181,
+192.168.1.2:2181,192.168.1.3:2181,这样就为客户端指定了三台服
+务器地址。另外,也可以在 connectString中设置客户端连接上 ZooKeeper
+connectString后的根目录,方法是在host:port字符串之后添加上这个根目录,例如,192.
+168.1.1:2181,192.168.1.2:2181,192.168.1.3:2181/zk
+book,这样就指定了该客户端连接上 ZooKeeper服务器之后,所有对 ZooKeeper
+的操作,都会基于这个根目录。例如,客户端对o/bar的操作,都会指向节点
+zkbo/fo/bar这个目Chroot录也叫,即客户端隔离命名空间。关于
+ZooKeeper中 Chroot的用法和作用,将在7.3.2节中做详细讲解
+指会话的超时时间,是一个以“毫秒”为单位的整型值。在 ZooKeeper中有
+会话的概念,在一个会话周期内, ZooKeeper客户端和服务器之间会通过心跳检
+sessionTimeout测机制来维持会话的有效性,一旦在 sessionTimeout时间内没有进行有效
+的心跳检测,会话就会失效。关于 ZooKeeper会话和心跳检测,将在7.4节中
+做详细讲解
+在4.1.3节中我们已经提到了 ZooKeeper中 Watcher的概念 ZooKeeper允许
+watcher
+Watcher)的实现类对象来作为默认的Watcher事件通知处理器。当然,该参
+数可以设置为null以表明不需要设置默认的 Watcher处理器关于 ZooKeeper
+的 Watcher机制和实现原理,将在7.1.4节中做详细讲解
+这是一个 boolean类型的参数,用于标识当前会话是否支持“read-only(只
+读)”模式。默认情况下,在ZooKeeper集群中,一个机器如果和集群中过半及
+canBeReadonly以上机器失去了网络连接,那么这个机器将不再处理客户端请求(包括读写请
+求)。但是在某些使用场景下,当 ZooKeeper服务器发生此类故障的时候,我们
+还是希望 ZooKeeper服务器能够提供读服务(当然写服务肯定无法提供)
+这就是 ZooKeeper的“read-only模参参数一确定一个会话,同时客户
+分别代表会话ID和会话秘钥。这两个
+端使用这两个参数可以实现客户端会话复用,从而达到恢复会话的效果。具体
+使用方法是,第一次连接上 ZooKeeper服务器时通过调用 ZooKeeper对象实
+sessionId和ses例的以下两个接口,即可获得当前会话的ID和秘钥:
+sionPasswd
+Long getSessionId();
+byte[] getSessionPasswd();
+获取到这两个参数值之后,就可以在下次创建 ZooKeeper对象实例的时候传
+入构造方法了
+注意, ZooKeeper客户端和服务端会话的建立是一个异步的过程,也就是说在程序中,
+构造方法会在处理完客户端初始化工作后立即返回,在大多数情况下,此时并没有真正
+92第5 ZooKeeper章使用
+
+<==========================103end ==============================>
+<==========================104start==============================>
+
+建立好一个可用的会话,在会话的生命周期中处于“CONNECTING”的状态。
+当该会话真正创建完毕后, ZooKeeper服务端会向会话对应的客户端发送一个事件通知,
+以告知客户端,客户端只有在获取这个通知之后,才算真正建立了会话。
+该构造方法内部实现了与 ZooKeeper服务器之间的TCP连接创建,负责维护客户端会
+话的生命周期,本章不对这些细节做更多讲解,关于 ZooKeeper客户端与服务端之间的
+连接创建过程及其内部原理,将在73节中做详细讲解。
+创建一个最基本的 ZooKeeper会话实例
+清单5-2.创建一个最基本的 ZooKeeper会话实例
+package book. chapter05.$5_3_1
+import java. util. concurrent. CountDownLatch;
+import org. apache. zookeeper. WatchedEvent;
+import org. apache. zookeeper.Watcher;
+import org. apache. zookeeper. Watcher. Event. KeeperState;
+import org. apache. zookeeper. ZooKeeper;
+/Chapter:5.3.1 Java API创建连接创建一个最基本的 ZooKeeper会话实例
+public class ZooKeeper_Constructor_Usage_Simple implements Watcher
+private static CountDownLatch connectedSemaphore new CountDownLatch(1);
+public static void main(String args) throws Exception
+ZooKeeper zookeeper
+new ZooKeeper( "domain1. book. zookeeper 4: 2181",
+5000,//
+new ZooKeeper_Constructor_Usage_Simple());
+System.out. println(zookeeper. getState())
+try
+connectedSemaphore. await()
+catch (InterruptedException e)
+System.out. println("ZooKeeper session established.");
+}
+public void process(watchedEvent event){
+System.out.println("Receive watched event: " event);
+if(KeeperState. SyncConnected=event. getState()){
+connectedSemaphore. countDown()
+}
+}
+}
+运行程序,输出结果如下:
+注4:为方便起见,本书示例代码中都使用HOST绑定的方式来关联 ZooKeeper服务器的地址。
+5.3java客户端AP使用93
+
+<==========================104end ==============================>
+<==========================105start==============================>
+
+CONNECTING
+Receive watched event WatchedEvent state: SyncConnected type: None path:null
+ZooKeeper session established.
+在上面这个程序片段中,我们使用第一种构造方法(ZooKeeperString
+connectString, int sessionTimeout, Watcher watcher))来实例化
+了一个ZooKeeper对象,从而建立了会话。
+另外, ZooKeeper Constructor Usage类实现了 Watcher接口,重写了
+process方法,该方法负责处理来自 ZooKeeper服务端的 Watcher通知,在收到
+服务端发来的 SyncConnected事件之后,解除主程序在 CountDownLatch上的
+等待阻塞。至此,客户端会话创建完毕。
+创建一个复用 sessionId和 sessionPasswd的 ZooKeeper对象实例
+在清单5-1中列出的 ZooerZooKeeper客户端构造方法中,我们看到构造方法
+允许传入 sessionId和 sessionPasswd客户端传和
+sessionPasswd的目的是为了复用会话,以维持之前会话的有效性。清单5-3是
+一个复用sessionId和 sessionPasswd来创建 ZooKeeper对象实例的示例。
+清单5-3.复用 sessionId和 sessionPasswd来创建一个对象实例
+package book. chapter05.$5_3_
+import java.util. concurrent. CountDownLatch;
+import org. apache. zookeeper. WatchedEvent;
+import org. apache. zookeeper. Watcher;
+import org. apache, zookeeper. Watcher. Event. Keeperstate;
+import org. apache. zookeeper. Zookeeper;
+//创建一个最基本的ZooKeeper对象实例,复用 sessionId和 session passwd
+public class Zookeeper_Constructor_Usage_With_SID_PASSWD implements Watcher
+{
+private static CountDownLatch connectedSemaphore new CountDownLatch()
+public static void main(String[] args) throws Exception{
+ZooKeeper zookeeper= new ZooKeeper("domain1.book. zookeeper:2181",
+5000,/
+new ZooKeeper_ Constructor Usage With SID _PASSWD())
+connectedSemaphore.await()
+long sessionId= zookeeper. getSessionId()
+byte[ passwd= zookeeper. getSessionPasswd();
+/Use illegal sessionId and sessionPassWd
+zookeeper new ZooKeeper("domain1. book. zookeeper: 2181",
+5000,/
+new ZooKeeper_Constructor_Usage_With_SID_PASSWD(),//
+11,//
+"test".getBytes())
+94第5 ZooKeeper章使用
+
+<==========================105end ==============================>
+<==========================106start==============================>
+
+/Use correct sessionId and sessionPasswd
+zookeeper new ZooKeeper("domain1. book. zookeeper: 2181",
+5000,/
+new ZooKeeper_Constructor_Usage_With_SID PASSWD() 1/
+sessionId,/
+passwd);
+Thread. sleep( Integer. MAX_VALUE )
+}
+public void process(WatchedEvent event){
+System.out. println("Receive watched event: " event);
+if(KeeperState. SyncConnected= event.getState()){
+connectedSemaphore. countDown()
+}
+运行程序,输出结果如下:
+Receive watched event: WatchedEvent state: SyncConnected type: None path: null
+Receive watched event: WatchedEvent state: Expired type: None path: null
+Receive watched event: WatchedEvent state: SyncConnected type: None path: null
+从上面这个示例程序和结果输出中,我们可以看出,第一次使用了错误的
+sessionId和 sessionPasswd来创建 ZooKeeper客户端的实例,结果客户端接
+收到了服务端的 Expired事件通知;而第二次则使用正确的 sessionId和
+sessionPasswd来创建客户端的实例,结果连接成功。
+5.3.2创建节点
+客户端可以通过 ZooKeeper的AP来创建一个数据节点,有如下两个接口:
+String create(final String path,
+byte data[]
+List<ACL> acl
+CreateMode createMode)
+void create(final String path,
+byte data[
+List<ACL> acl,
+CreateMode createMode
+StringCallback cb, Object ctx)
+这两个接口分别以同步和异步方式创建节点,API方法的参数说明如表5-3所示。
+5.3java客户端AP使用95
+
+<==========================106end ==============================>
+<==========================107start==============================>
+
+表5-3. ZooKeeper create API方法参数说明
+参数名
+说明
+path
+需要创建的数据节点的节点路径,例如,/zk-book/foo
+datall
+一个字节数组,是节点创建后的初始内容
+acl
+节点的ACL策略
+节点类型,是一个举类型,通常有4种可选的节点类型:
+●持久(PERSISTENT)
+·持久顺序(PERSISTENT_SEQUENTIAL)
+createMode
+临时(EPHEMERAL
+临时顺序(EPHEMERAL_SEQUENTIAL)
+关于 ZNode的节点特性,将在7.1.2节中做详细讲解
+注册一个异步回调函数。开发人员需要实现 String接口,主要是对下
+面这个方法的重写:
+cb
+void processResult(int rc, String path, Object ctx, String
+name);
+当服务端节点创建完毕后, ZooKeeper客户端就会自动调用这个方法,这样就
+可以处理相关的业务逻辑了
+ctx
+用于传递一个对象,可以在回调方法执行的时候使用,通常是放一个上下文
+(Context)信息
+需要注意几点,无论是同步还是异步接口, ZooKeeper都不支持递归创建,即无法在父
+节点不存在的情况下创建一个子节点。另外,如果一个节点已经存在了,那么创建同名
+节点的时候,会抛出 NodeExistsException异常。
+目前, ZooKeeper的节点内容只支持字节数组(byte[])类型,也就是说,ZooKeeper
+不负责为节点内容进行序列化,开发人员需要自己使用序列化工具将节点内容进行序列
+化和反序列化。对于字符串,可以简单地使用"string" getBytes()来生成一个字
+节数组;对于其他复杂对象,可以使用 Hessian或是kryo等专门的序列化工具来进行序
+列化。
+关于权限控制,如果你的应用场景没有太高的权限要求,那么可以不关注这个参数,只
+需要在acl参数中传入参数Ids.PEN_ACLUNSAFE,这就表明之后对这个节点的任
+何操作都不受权限控制。关于 ZooKeeper的权限控制,将在7.1.5节中做详细讲解。
+使用同步API创建一个节点
+清单5-4.使用同步AP创建一个节点
+package book. chapter05. $5_3_2;
+import java. util. concurrent. CountDownLatch;
+import org.apache. zookeeper.CreateMode
+import org. apache. zookeeper. WatchedEvent;
+import org. apache. zookeeper. Watcher;
+import org. apache. zookeeper. Watcher. Event. KeeperState;
+import org. apache. zookeeper. ZooDefs. Ids;
+import org. apache. zookeeper. ZooKeeper;
+96第5 ZooKeeper章使用
+
+<==========================107end ==============================>
+<==========================108start==============================>
+
+/ZooKeeper API创建节点,使用同步(sync)接口
+public class ZooKeeper_ Create_API_ Sync_Usage implements watcher
+private static CountDownLatch connectedSemaphor new CountDownLatch(1)
+public static void main(String[ args throws Exception{
+ZooKeeper zookeeper= new Zookeeper("domain1.book zookeeper:2181,
+5000,/
+new ZooKeeper Create_API_Sync Usage());
+connectedSemaphore.await()
+String pathl zookeeper. create( "/zk-test-ephemeral-",
+"" getBytes()
+Ids. OPEN_ACL_UNSAFE,
+CreateMode. EPHEMERAL);
+System.out. println("Success create znode: " path1);
+String path2= zookeeper. create("/k-test--",
+"".getBytes ()
+CreateMode. EPHEMERAL SEQUENTIAL)
+System. out.println("Success create znode: "+path2);
+}
+public void process(WatchedEvent event){
+if (KeeperState. SyncConnected event.getState()){
+connectedSemaphore. countDown()
+}
+}
+运行程序,输出结果如下:
+Receive watched event: WatchedEvent state: SyncConnected type: None path: null
+Success create znode: /zk-test-ephemeral-
+Success create znode: /zk-test-ephemeral-0001975508
+在上面这个程序片段中,使用了同步的节点创建接口: String create(final
+String path, byte data[, List <ACL> acl, CreateMode createMode).
+在接口使用中,我们分别创建了两种类型的节点:临时节点和临时顺序节点。从返
+回的结果可以看出,如果创建了临时节点,那么AP的返回值就是当时传入的path
+参数;如果创建了临时顺序节点,那么 ZooKeeper会自动在节点后缀加上一个数字,
+并且在API接口的返回值中返回该数据节点的一个完整的节点路径。
+使用异步API创建一个节点
+清单5-5.使用异步AP创建一个节点
+package book. chapter05.$5_3_2:
+5.3java客户端AP使用97
+
+<==========================108end ==============================>
+<==========================109start==============================>
+
+import java. util. concurrent. CountDownLatch;
+import org. apache. zookeeper. AsyncCallback;
+import org. apache. zookeeper.CreateMode;
+import org. apache. zookeeper. WatchedEvent;
+import org. apache. zookeeper. Watcher;
+import org. apache. zookeeper. Watcher. Event. Keeperstate;
+import org. apache. zookeeper. ZooDefs. Ids;
+import org. apache. zookeeper. ZooKeeper;
+∥ Zookeeper API创建节点,使用异步(async)接口
+public class ZooKeeper_Create_API__Usage implements Watcher
+private static CountDownLatch connectedSemaphore new CountDownLatch();
+public static void main(String args) throws Exception
+ZooKeeper zookeeper new ZooKeeper("domain1. book. zookeeper: 2181",
+5000,
+new ZooKeeper_Create_API_ASync_Usage());
+connectedSemaphore.await();
+zookeeper. create( "/zk-test-ephemeral-", "".getBytes(),
+Ids. OPEN_ACL_UNSAFE, CreateMode. EPHEMERAL,
+new IStringCallback()," am context.");
+zookeeper. create( "/zk-test-ephemeral-", "".getBytes(),
+Ids.OPEN_ACL_UNSAFE, CreateMode. EPHEMERAL,
+new IStringCallback(), "I am context. ")
+zookeeper. create("/zk-test-ephemeral--","". getBytes(),
+Ids. OPEN_ACL_UNSAFE, CreateMode. EPHEMERAL_SEQUENTIAL,
+new IStringCallback)" am context.")
+Thread. sleep( Integer. MAX_VALUE )
+}
+public void process(WatchedEvent event){
+if (KeeperState. SyncConnected =event.getState( )
+connectedSemaphore. countDown()
+}
+}
+class IStringCallback implements AsyncCallback. StringCallback{
+public void processResult(int rc, String path, Object ctx, String name)
+System.out. println("Create path result:["+rc+","path+,
+ctx +" real path name: "+name);
+}
+98第5 ZooKeeper章使用
+
+<==========================109end ==============================>
+<==========================110start==============================>
+
+运行程序,输出结果如下:
+CCreate path result: [0, /zk-test-ephemeral-, I am context., real path name:
+/zk-test-ephemeral-
+Create path result:-110,/zk-test-ephemeral---, am context. real path name
+null
+Create path result: [0, /zk-test-ephemeral, I am context., real path name:
+/zk-test-ephemeral-0001975736
+从这个程序片段中可以看出,使用异步方式创建接口也很简单。用户仅仅需要实现
+AsyncCallback. StringCallback(接口即可。 AsyncCallback包含了
+StatCallback、 DataCallback、 ACLCallback、 ChildrenCallback、
+ChildrenCallback2 StringCallback和 VoidCallback七种不同的回调
+接口,用户可以在不同的异步接口中实现不同的接口。
+和同步接口方法最大的区别在于,节点的创建过程(包括网络通信和服务端的节点
+创建过程)是异步的。并且,在同步接口调用过程中,我们需要关注接口抛出异常
+的可能;但是在异步接口中,接口本身是不会抛出异常的,所有的异常都会在回调
+函数中通过 Result Code(响应码)来体现。
+下面来重点看下回调方法: void processResult(int rc, String path,
+Object ctx, String name)。这个方法的几个参数主要如表5-4所示。
+表5-4. ProcessResult方法参数说明
+参数名
+说明
+Result Code,服务端响应码。客户端可以从这个响应码中识别出AP调用的结果
+常见的响应码如下。
+0(k):接口调用成功
+rc
+4(ConnectionLoss):客户端和服务端连接已断开。
+-110(NodeExists):指定节点已存在。
+-112(SessionExpired):会话已过期
+path
+接口调用时传入API的数据节点的节点路径参数值
+ctx
+接口调用时传入AP的Ct参数值
+实际在服务端创建的节点名。在清单55中,第三次创建节点时,由于创建的节点
+name
+类型是顺序节点,因此在服务端没有真正创建好顺序节点之前,客户端无法知道节点
+的完整节点路径。于是,在回调方法中,服务端会返回这个数据节点的完整节点路径
+5.3.3删除节点
+客户端可以通过 ZooKeeper的API来删除一个节点,有如下两个接口:
+public void delete(final String path, int version)
+public void delete(final String path, int version, VoidCallback cb, Object ctx)
+5.3jav客户端AP使用99
+
+<==========================110end ==============================>
+<==========================111start==============================>
+
+这里列出的两个API分别是同步和异步的删除接口,AP方法的参数说明如表5-5所示。
+表5-5. ZooKeeper delete API方法参数说明
+参数名
+说明
+path
+指定数据节点的节点路径,即API调用的目的是删除该节点
+version指定节点的数据版本,即表明本次删除操作是针对该数据版本进行的
+cb
+注册一个异步回调函数
+ctx
+用于传递上下文信息的对象
+删除节点的接口和5.3.5节中讲解的更新数据的接口,在使用方法上是极其相似的,所
+以这里不再对示例代码做详细讲解,读者可以到book. chapter05.8533包下查看示例文
+件 Delete APISyncUsage java。唯一需要指出的一点是,在 ZooKeeper中,只允许删
+除叶子节点。也就是说,如果一个节点存在至少一个子节点的话,那么该节点将无法被
+直接删除,必须先删除掉其所有子节点。
+5.3.4读取数据
+读取数据,包括子节点列表的获取和节点数据的获取。 ZooKeeper分别提供了不同的API
+来获取数据。
+getChildren
+客户端可以通过 ZooKeeper的API来获取一个节点的所有子节点,有如下8个接口可供
+使用:
+List<String>getChildren(final String path, Watcher watcher)
+List<String>getChildren(String path, boolean watch)
+void getChildren(final String path, Watcher watcher, ChildrenCallback cb, Object
+ctx)
+void getchildren(String path, boolean watch Childrencallback cb, Object ctx)
+List<String>getChildren(final String path, Watcher watcher, Stat stat)
+list<String>getChildren(String path, boolean watch, Stat stat)
+void getChildren (final String path, Watcher watcher, Children2Callback cb,Object
+ctx
+)
+void getChildren(String path, boolean watch, Children2Callback cb, Object ctx)
+这里列出的8个API包含了同步和异步的接口,API方法的参数说明如表5-6所示。
+表5-6. ZooKeeper getChildren API方法参数说明
+参数名
+说明
+path
+指定数据节点的节点路径,即API调用的目的是获取该节点的子节点列表
+watcher
+注册的 Watcher。一旦在本次子节点获取之后,子节点列表发生变更的话,那么
+就会向客户端发送通知。该参数允许传入null
+100第5 ZooKeeper章使用
+
+<==========================111end ==============================>
+<==========================112start==============================>
+
+续表
+参数名
+说明
+表明是否需要注册一个 Watcher另外,在.3.1节中,我们曾提到过有一个默
+watch
+认 Watcher的概念,这里就要使用到该默认 Watcher了。如果这个参数是true,那
+么 ZooKeeper客户端会自动使用上文中提到的那个默认 Watcher;如果是 false,表
+明不需要注册 Watcher
+cb
+注册一个异步回调函数
+ctx
+用于传递上下文信息的对象
+stat
+指定数据节点的节点状态信息。用法是在接口中传入一个旧的stat变量,该
+stat变量会在方法执行过程中,被来自服务端响应的新stat对象替换
+可以发现,该AP和5.3.2节中的 create APl有很多相似之处,这里我们只对一些有
+差异的地方展开进行讲解。
+首先,我们来看看注册 Watcher。如果 ZooKeeper客户端在获取到指定节点的子节点列
+表后,还需要订阅这个子节点列表的变化通知,那么就可以通过注册一个 Watcher来实
+现。当有子节点被添加或是删除时,服务端就会向客户端发送一个 NodeChildren
+Changed(EventType. NodeChildrenChanged)类型的事件通知。需要注意的是,
+在服务端发送给客户端的事件通知中,是不包含最新的节点列表的,客户端必须主动重
+新进行获取。通常客户端在收到这个事件通知后,就可以再次获取最新的子节点列表了。
+再来看看用于描述节点状态信息的对象:satstat对象中记录了一个节点的基本属
+性信息,例如节点创建时的事务ID(cZxid)、最后一次修改的事务ID(mZxid)和节
+点数据内容的长度(dataLength)等。有时候,我们不仅需要获取节点最新的子节点
+列表,还要获取这个节点最新的节点状态信息。对于这种情况,我们可以将一个旧的
+stat变量传入API接口,该stat变量会在方法执行过程中,被来自服务端响应的新
+stat对象替换。
+使用同步API获取子节点列表
+清单5-6.使用同步AP获取子节点列表
+package book. chapter05.$5_3_4;
+import java.util.List;
+import java. util. concurrent. CountDownLatch;
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. WatchedEvent;
+import org. apache. zookeeper.Watcher;
+import org. apache. zookeeper. Watcher.Event. EventType
+import org. apache. zookeeper. Watcher. Event. KeeperState;
+a an
+import org. apache. zookeeper. ZooDefs.Ids;
+import org. apache. zookeeper. ZooKeeper;
+∥ ZooKeeper API获取子节点列表,使用同步(sync)接口
+5.3java客户端AP使用101
+
+<==========================112end ==============================>
+<==========================113start==============================>
+
+public class ZooKeeper_GetChildren_API_Sync_Usage implements Watcher
+private static CountDownLatch connectedSemaphore new CountDownLatch(1)
+private static ZooKeeper zk null;
+public static void main(String [ args) throws Exception{
+String path "/zk-book";
+zk =new ZooKeeper("domain1. book. zookeeper: 2181",
+5000,/
+new ZooKeeper_GetChildren _API_Sync_Usage());
+connectedSemaphore. await()
+zk. create(path,""getBytes(),
+Ids.OPEN_ACL_UNSAFE, CreateMode. PERSISTENT);
+zk. create(path+"/c1",
+. getBytes()
+Ids. OPEN_ACL_UNSAFE, CreateMode. EPHEMERAL);
+List<String> childrenList zk. getChildren(path, true);
+System.out.println(childrenList);
+zk. create(path+"/c2", "".getBytes(),
+Ids.OPEN_ACL_UNSAFE, CreateMode. EPHEMERAL);
+Thread.sleep( Integer. MAX_VALUE )
+public void process(WatchedEvent event){
+if (KeeperState. SyncConnected =event. getstate()){
+if (EventType. None =event. getType() & null event. getPath()){
+connectedSemaphore. countDown()
+else if (event.getType ( ==EventType. NodeChildrenChanged){
+try
+System. out. println("ReGet
+Child: "+zk. getChildren(event.getPath(), true));
+catch (Exception e)
+}
+运行程序,输出结果如下:
+[c1
+ReGet Child: [c1, c2]
+在上面这个程序中,我们首先创建了一个父节点/zk-book,以及一个子节点
+zk-book/cl.然后调用 getChildren的同步接口来获取/zk-book节点下的所有子
+节点,同时在接口调用的时候注册了一个 Watcher之后,我们继续向/zk-book节
+点创建子节点/zk-book/c2由于之前我们对/k-book节点注册Watcher了一个,因此,
+102第5 ZooKeeper章使用
+
+<==========================113end ==============================>
+<==========================114start==============================>
+
+一旦此时有子节点被创建, ZooKeeper服务端就会向客户端发出一个“子节点变更”
+的事件通知,于是,客户端在收到这个事件通知之后就可以再次调用 getChildren
+方法来获取新的子节点列表。
+另外,从输出结果中我们还可以发现,调用 getChildren获取到的节点列表,都
+是数据节点的相对节点路径,例如上面输出结果中的c和c2,事实上,完整的 ZNode
+路径应该是/zk-book/c和/zk-book/c2
+关于 Watcher,这里简单提一点, ZooKeeper服务端在向客户端发送 Watcher
+“NodeChild renChanged”事件通知的时候,仅仅只会发出一个通知,而不会把
+节点的变化情况发送给客户端,需要客户端自己重新获取。另外,由于 Watcher通
+知是一次性的,即一旦触发一次通知后,该 Watcher就失效了,因此客户端需要反
+复注册 Watcher
+使用异步API获取子节点列表
+清单5-7.使用异步API获取子节点列表
+package book. chapter05.$5_3_4;
+import java.util.List;
+import java. util. concurrent CountDownLatch;
+port org. apache. zookeeper. AsyncCallback;
+impo
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. WatchedEvent;
+import org. apache. zookeeper. Watcher;
+import org. apache. zookeeper. Watcher. Event. EventType;
+import org. apache. zookeeper Watcher. Event. Keeperstate;
+import org. apache. zookeeper. ZooDefs. Ids;
+import org. apache. zookeeper. ZooKeeper;
+import org. apache. zookeeper. data. Stat;
+/ZooKeeper API获取子节点列表,使用异步(async)接口
+public class ZooKeeper_GetChildrenAPI_ASync_Usage implements Watcher
+private static CountDownLatch connectedSemap new CountDownLatch(1);
+private static ZooKeeper zk null;
+public static void main(String[] args) throws Exception{
+String path ="/zk-book";
+zk new ZooKeeper("domain1. book. zookeeper: 2181",
+5000,/
+new ZooKeeperGetChildren_apiASync_Usage())
+connectedSemaphore.await();
+zk. create(path,"".getBytes()
+es.
+Ids. OPEN_ACL_UNSAFE, CreateMode. PERSISTENT);
+5.3java客户端AP使用103
+
+<==========================114end ==============================>
+<==========================115start==============================>
+
+zk. create(path+"c","".getBytes(),
+Ids.OPEN_ACL_UNSAFE, CreateMode. EPHEMERAL);
+zk. getChildrenpath,true, new IChildren2Cal),null)
+zk. create(path+"/c2", ". getBytes (
+Ids. OPEN_ACL_UNSAFE, CreateMode. EPHEMERAL);
+Thread. sleep( Integer. MAX_VALUE
+public void process(WatchedEvent event){
+if (KeeperState. SyncConnected =event.getState()){
+if (EventType. None =event.getType ()& null = event. getPath(
+connectedSemaphore. countDown()
+else if (event. getType() EventType. NodeChildrenChanged){
+try
+System.out.println("ReGet
+Child:"+. getChildren(event. getPath() ,true));
+catch (Exception e)
+class IChildren2Callback implements Asynccallback.Children2Callback{
+public void processResult(int rc, String path, Object ctx, List<String>
+children, Stat stat){
+System.out.println("Get Children znode result: [response code: " rc+
+, param path:"+path
++",ctx:"+ctx+", children list:"+ children+",stat:"+
+stat);
+运行程序,输出结果如下:
+Get Children znode result: [response code: 0, param path: /zk-book, ctx:
+null, children list:c,stat:249173686311,249173686311,1402232783461,
+1402232783461,0,1,0,0,0,1,249173686315
+ReGet Child: [cl, c2]
+在上面这个程序中,我们将子节点列表的获取逻辑进行了异步化。异步接口通常会
+应用在这样的使用场景中:应用启动的时候,会获取一些配置信息,例如“机器列
+表”,这些配置通常比较大,并且不希望配置的获取影响应用的主流程。
+getData
+客户端可以通过 ZooKeeper的AP来获取一个节点的数据内容,有如下4个接口:
+104第5 ZooKeeper章使用
+
+<==========================115end ==============================>
+<==========================116start==============================>
+
+byte[] getData(final String path, Watcher watcher, Stat stat)
+byte[] getData(String path, boolean watch, Stat stat)
+void getData(final String path, Watcher watcher, Datacallback cb, Object ctx)
+void getData(String path, boolean watch, DataCallback cb, Object ctx)
+这里列出的4个API包含了同步和异步的接口,API方法的参数说明如表5-7所示。
+表5-7. ZooKeeper get Data API方法参数说明
+参数名
+说明
+path
+指定数据节点的节点路径,即API调用的目的是获取该节点的数据内容
+watcher
+注册的 Watcher。一旦之后节点内容有变更就会向客户端发送通知。该
+参数允许传入null
+stat
+指定数据节点的节点状态信息。用法是在接口中传入一个旧的stat变量
+该stat变量会在方法执行过程中,被来自服务端响应的新stat对象替换
+表明是否需要注册一个 Watcher。另外,在上文5.3.1节中,我们曾提到
+过有一个默认 WarWatcher的概念,这里就要使用到该默认了。如果这
+watch
+个参数是true,那么 ZooKeeper客户端会自动使用上文中提到的那个默认
+Watcher;如果是 false,表明不需要注册 Watcher
+cb
+注册一个异步回调函数
+ctx
+用于传递上下文信息的对象
+getData接口和上文中的 getchildren接口的用法基本相同,这里主要看一看注册
+的 Watcher有什么不同之处。客户端在获取一个节点的数据内容的时候,是可以进行
+Watcher注册的,这样一来,一旦该节点的状态发生变更,那么 ZooKeeper服务端就会
+向客户端发送一个 NodeDataChanged(EventType. NodeDataChanged)的事件通
+知。
+另外,API返回结果的类型是byte[],这在上文中有提到过,目前 ZooKeeper只支持
+这种类型的数据存储,所以在获取数据的时候也是返回此类型。
+使用同步API获取节点数据内容
+清单5-8.使用同步AP获取节点数据内容
+package book. chapter05.$5_3_4;
+import java. util. concurrent. CountDownLatch;
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. WatchedEvent;
+import org. apache. zookeeper. Watcher;
+import org. apache. zookeeper. Watcher. Event. EventType;
+import org. apache. zookeeper. Watcher. Event. KeeperState;
+import org. apache. zookeeper. ZooDefs.Ids
+import org. apache. zookeeper. ZooKeeper;
+import org. apache. zookeeper.data.Stat;
+/ ZooKeeper API获取节点数据内容,使用同步(sync)接口
+public class GetData_API_Sync_Usage implements Watcher
+5.3ava客户端AP使用105
+
+<==========================116end ==============================>
+<==========================117start==============================>
+
+private static CountDownLatch connectedSema new CountDownLatch(1);
+private static ZooKeeper zk =null;
+private static Statstat= new Stat()
+public static void main(String[] args)throws Exception
+String path "/zk-book";
+zk= new ZooKeeper("domain1.book. zookeeper:2181",
+5000,//
+new GetData_API_Sync_Usage())
+connectedSemaphore.await()
+zk. create( path, "123".getBytes () Ids. OPEN_ACL_UNSAFE, CreateMode.
+EPHEMERAL )
+System.out. println(new String(zk. getData( path, true, stat )))
+System.out.println(stat. getCzxid)+","+stat. getMzxid()+","+stat. getVersion()
+)
+zk. setData(path,"123".getBytes(),-1);
+Thread. sleep( Integer. MAX_VALUE
+}
+public void process(WatchedEvent event){
+if(KeeperState. SyncConnected= event.getState())
+if (EventType. None event. getType() & null event. getPath( )
+connectedSemaphore. countDown()
+else if (event. getType() ==EventType. NodeDataChanged){
+try
+System.out. println(new String(k. getData event. getPath(),
+System.out. println(stat. getCzxid()+","+
+stat. getMzxid()+","+
+stat. getVersion())
+catch (Exception e){
+}
+}
+}
+运行程序,输出结果如下:
+123
+253404961568,253404961568,0
+123
+253404961568,253404961576,1
+在上面这个程序中,我们首先创建了一个节点/zk-book,并初始化其数据内容为
+106第5 ZooKeeper章使用
+
+<==========================117end ==============================>
+<==========================118start==============================>
+
+“123”。然后调用getData的同步接口来获取/zk-book节点的数据内容,调用的同
+时注册了一个 Watcher。之后,我们同样以“123”去更新将该节点的数据内容,此
+时,由于我们之前在该节点上注册了一个 Watcher,因此,一旦该节点的数据发生
+变化, ZooKeepeer服务端就会向客户端发出一个“数据变更”的事件通知,于是,
+客户端可以在收到这个事件通知后,再次调用 getData接口来获取新的数据内容。
+另外,在调用 getData接口的同时,我们传入了一个stat变量,在ZooKeeper
+客户端的内部实现中,会从服务端的响应中获取到数据节点的最新节点状态信息,
+来替换这个客户端的旧状态。关于“Java中传引用还是传值”的问题,读者可以从
+一些Java基础书籍上进行更加详细的了解。
+我们重点再来看下运行上面这个程序的输出结果中,前后两次调用 getData接口
+的返回值。第一次的输出结果如下:
+123
+253404961568,253404961568,0
+第二次的输出结果如下:
+123
+253404961568,253404961576,1
+第一次是客户端主动调用 getData接口来获取数据;第二次则是节点数据变更后,
+服务端发送 Watcher事件通知给客户端后,客户端再次调用 getData接口来获取
+数据。相信读者已经发现了,两次调用的输出结果中,节点数据内容的值并没有变
+化。既然节点的数据内容并没有变化,那么 ZooKeeper服务端为什么会向客户端发
+送 Watcher事件通知呢。这里,我们必须明确一个概念:节点的数据内容或是节点
+的数据版本变化,都被看作是 ZooKeeper节点的变化。明白这个概念后,再回过头
+看上面的结果输出,可以看出,该节点在xid为“253404961568”时被创建,在
+zxid为“253404961576”时被更新,于是节点的数据版本从“0”变化到“1”。所
+以,这里我们要明确的一点是,数据内容或是数据版本变化,都会触发服务端的
+NodeDataChanged通知。
+使用异步API获取节点数据内容
+清单5-9.使用异步API获取节点数据内容
+package book. chapter05. $5_3_4;
+import java. util. concurrent. CountDownLatch;
+import org. apache. zookeeper. AsyncCallback;
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. WatchedEvent;
+5.3java客户端AP使用107
+
+<==========================118end ==============================>
+<==========================119start==============================>
+
+import org. apache. zookeeper.Watcher;
+import org. apache. zookeeper. Watcher. Event. EventType;
+import org. apache. zookeeper. Watcher Event. Keeperstate;
+import org. apache. zookeeper. ZooDefs. Ids;
+import org. apache. zookeeper. ZooKeeper;
+import org. apache. zookeeper.data.Stat;
+ZooKeeper API获取节点数据内容,使用异步(async)接口
+public class GetData_API_ASync_Usage implements Watcher
+private static CountDownLatch connectedSemaphore new CountDownLatch(1);
+private static Zookeeper zk;
+public static void main(Stringargs)throws Exception
+String path="/zk-book";
+zk new ZooKeeper("domain1. book. zookeeper: 2181",
+5000,/
+new GetData_API _ASync_Usage() )
+connectedSemaphore.await()
+zk. create( path, "123".getBytes(), Ids. OPEN_ACL_UNSAFE, CreateMode.
+EPHEMERAL )
+zk. getData(path,true, new IDataCallback(),null)
+zk.setData(path,123", getBytes(),-1);
+Thread.sleep( Integer. MAX_VALUE )
+}
+public void process(WatchedEvent event){
+if (KeeperState. SyncConnected ==event. getState()){
+if (EventType. None =event. getType ( & null = event.getPath() )
+connectedSemaphore. countDown();
+else if (event. getType() ==EventType NodeDataChanged){
+try
+zk. getData( event. getPath(), true, new IDataCallback(), null )
+catch (Exception e)
+}
+}
+class IDataCallback implements AsyncCallbackDataCallback{
+public void processResult(int rc, String path, Object ctx, byte[] data,Stat
+stat){
+System.out. println(rc+","+path+","+ new String(data));
+System.out. println(stat. getCzxid()+","+
+stat. getMzxid()+","+
+stat.getVersion())
+108第5 ZooKeeper章使用
+
+<==========================119end ==============================>
+<==========================120start==============================>
+
+运行程序,输出结果如下:
+,/zk-book,123
+25340521411825305214118,0
+,/zk-book,123
+253405214118,253405214119,1
+上面就是使用 getData的异步接口来获取节点数据内容的示例程序。
+5.3.5更新数据
+客户端可以通过 ZooKeeper的APl来更新一个节点的数据内容,有如下两个接口:
+Stat setData(final String path, byte datal], int version)
+void setData(final String path, byte data[], int version, StatCallback cb, Object
+ctx)
+这里列出的两个API分别是同步和异步的更新接口,API方法的参数说明如表5-8所示。
+表5-8. ZooKeeper setData API方法参数说明
+参数名
+说明
+path
+指定数据节点的节点路径,即API调用的目的是更新该节点的数据内容
+data[
+一个字节数组,即需要使用该数据内容来覆盖节点现在的数据内容
+version
+指定节点的数据版本,即表明本次更新操作是针对该数据版本进行的
+cb
+注册一个异步回调函数
+ctx
+用于传递上下文信息的对象
+更新数据的接口较为简单明了。我们重点来看下方法中的 version参数。 version参
+数用于指定节点的数据版本,表明本次更新操作是针对指定的数据版本进行的。但是,
+细心的读者一定已经发现了一个问题:在.3.4节中提到的读取数据的接口 getData中,
+并没有提供根据指定数据版本来获取数据的接口,那么,这里指定数据版本更新的意义
+何在呢?
+在讲解这个问题之前,我们首先来看下AS(Compare and Swap)理论的相关知识。在
+《ava并发编程实践》一书中提到,在现代绝大多数的计算机处理器体系架构中,都实
+现了对CAS的指令支持。通俗地讲,CA的意思就是:“对于值V,每次更新前都会比
+对其值是否是预期值A,只有符合预期,才会将原子化地更新到新值B” ZooKeeper
+的 setData接口中的 version参数正是由CAS原理衍化而来的。从前面的介绍中,
+我们已经了解到, ZooKeeper每个节点都有数据版本的概念,在调用更新操作的时候,
+就可以添加 version这个参数,该参数可以对应于CAS原理中的“预期值”,表明是
+5.3java客户端APl使用109
+
+<==========================120end ==============================>
+<==========================121start==============================>
+
+针对该数据版本进行更新的。具体来说,假如一个客户端试图进行更新操作,它会携带
+上次获取到的 version值进行更新。而如果在这段时间内, ZooKeeper服务器上该节
+点的数据恰好已经被其他客户端更新了,那么其数据版本一定也发生了变化,因此肯定
+与客户端携带的 version无法匹配,于是便无法更新成功因此可以有效地避免一
+些分布式更新的并发问题, ZooKeeper的客户端就可以利用该特性构建更复杂的应用场
+景,例如分布式锁服务等。关于 ZooKeeper数据节点的版本,将在7.1.3节中做详细讲
+解
+使用同步API更新节点数据内容
+清单5-10.使用同步API更新节点数据内容
+package book. chapter05.$_3_5;
+import java. util. concurrent. CountDownLatch;
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. KeeperException;
+import org. apache. zookeeper. WatchedEvent;
+import org. apache. zookeeper. Watcher;
+import org. apache. zookeeper. Watcher.Event.EventType;
+import org. apache, zookeeper. Watcher. Event. KeeperState;
+import org. apache. zookeeper. ZooDefs.Ids;
+import org. apache. zookeeper. ZooKeeper;
+import org. apache. zookeeper. data. Stat;
+/ ZooKeeper API更新节点数据内容,使用同步(sync)接口
+public class SetData_API_Sync_Usage implements Watcher
+private static CountDownLatch connecteds new CountDownLatch(1)
+private static ZooKeeper zk;
+public static void main(String[] args)throws Exception
+String path "/zk-book";
+zk= new ZooKeeper("domain1.book. zookeeper:2181",
+5000,//
+new SetData_API_Sync_Usage())
+connectedSemaphore. await()
+. create( path, "123".getBytes () Ids.OPEN_ACL_UNSAFE, CreateMode.
+EPHEMERAL )
+zk.getData( path, true, null
+Stat stat=zk. setDatapath,"456"getBytes(),-1);
+System.out. printIn(stat. getCzxid()+","+
+stat. getMzxid()+","+
+stat.getVersion())
+110第5章 ZooKeeper使用
+
+<==========================121end ==============================>
+<==========================122start==============================>
+
+Stat stat22=zk. setData(path,456"getBytes),stat. getVersion())
+System. out. println(stat2. getCzxid()+","+
+stat2. getMzxid()+","+
+stat2. getVersion())
+try{
+zk. setData(path,"456".getBytes(),tat.getVersion());
+catch KeeperException e
+System.out.println("Error:"+e.ode)+","+e. getMessage())
+}
+Thread. sleep( Integer. MAX_VALUE
+}
+@Override
+public void process(WatchedEvent event){
+if(KeeperState. SyncConnected= event.getState()){
+if (EventType. None event. getType ( & null = event. getPath()){
+connectedSemaphore.countDown()
+}
+运行程序,输出结果如下:
+253406115885,253406115886,1
+253406115885,253406115887,2
+Error: BADVERSION, KeeperErrorCode = BadVersion for /zk-book
+在上面的示例程序中,我们前后进行了三次更新操作,分别使用了不同的 version,
+接下来我们针对这三次更新操作分别做讲解。
+在第一次更新操作中,使用的版本是“”,并且更新成功。这里需要和读者解释
+下,版本“-1”代表了什么在 ZooKeeper中,数据版本都是从0开始计数的,所
+以严格地讲,“-1”并不是一个合法的数据版本,它仅仅是一个标识符,如果客户
+端传入的版本参数是“-1”,就是告诉 ZooKeeper服务器,客户端需要基于数据的
+最新版本进行更新操作。如果对 ZooKeeper数据节点的更新操作没有原子性要求,
+那么就可以使用“-1”。
+第一次更新操作成功执行后, ZooKeeper务端会返回给客户端一个数据节点的节
+点状态信息对象:stat,从这个数据结构中,我们可以获取服务器上该节点的最
+新数据版本。从程序的运行情况可以看出,第一次更新操作完成后,节点的数据版
+本变更为“1”。于是在第二次更新操作中,我们在接口中传入了这个版本号,也执
+行成功,同时我们看到了,此时的数据版本已经变更为“2”了。
+在进行第三次操作的时候,程序依然使用了之前的数据版本“1”来进行更新操作,
+5.3java客户端AP使用111
+
+<==========================122end ==============================>
+<==========================123start==============================>
+
+于是更新失败了。
+从上面这个例子中,我们可以看出,基于 Version参数,可以很好地来控制
+ZooKeeper上节点数据的原子性操作。
+使用异步API更新节点数据内容
+清单5-11.使用异步AP更新节点数据内容
+package book. chapter05.$5_3_5:
+import java. util. concurrent. CountDownLatch;
+import org. apache. zookeeper.AsyncCallback;
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. WatchedEvent;
+import org. apache. zookeeper.Watcher;
+import org. apache. zookeeper. Watcher.Event.EventType;
+import org. apache. zookeeper. Watcher. Event. KeeperState;
+import org. apache. zookeeper. ZooDefs.Ids;
+import org. apache. zookeeper. ZooKeeper;
+import org. apache. zookeeper. data. Stat;
+/ ZooKeeper API更新节点数据内容,使用异步(async)接口
+public class SetData_API_ASync_Usage implements Watcher
+private static CountDownLatch connectedSemapho new CountDownLatch(1);
+private static Zookeeper zk;
+public static void main(String[] args) throws Exception
+String path ="/zk-book"
+zk new ZooKeeper("domain1.book. zookeeper: 2181",
+5000,1
+new SetData_api_ASync_Usage());
+connectedSemaphore.await();
+zk. create( path, "123". getBytes () Ids. OPEN_ACL_UNSAFE,
+CreateMode. EPHEMERAL )
+zk. setData( path, "456". getBytes( ) -1, new IStatCallback(), null
+Thread. sleep( Integer. MAX_VALUE
+@Override
+public void process(WatchedEvent event){
+if (KeeperState. SyncConnected ==event.getState()){
+if (EventType. None event. getType( & null event. getPath( ))
+connectedSemaphore. countDown()
+112第5章 ZooKeeper使用
+
+<==========================123end ==============================>
+<==========================124start==============================>
+
+class IStatCallback implements AsyncCallbacl. StatCallback{
+public void processResult(int rc, String path, Object ctx, Stat stat)
+if (rc =0)
+System.out.println("SUCCESS");
+异步API的使用和前面的例子基本类似,这里不再赘述。
+5.3.6检测节点是否存在
+客户端可以通过 ZooKeeper的API来删除一个节点,有如下4个接口:
+public Stat exists(final String path, Watcher watcher)
+public Stat exists(String path, boolean watch)
+public void exists(final String path, Watcher watcher, StatCallback cb, Object
+ctx)
+public void exists(String path, boolean watch, StatCallback cb, Object ctx)
+这里列出的4个API分别是用同步和异步方式来检测节点是否存在的接口,API方法的
+参数说明如表5-9所示。
+表5-9. ZooKeeper exists API方法参数说明
+参数名
+说明
+path
+指定数据节点的节点路径,即API调用的目的是检测该节点是否存在
+注册的 Watcher,用于监听以下三类事件
+watcher
+·节点被创建
+·节点被删除
+节点被更新
+watch
+指定是否复用 ZooKeeper中默认的 Watcher
+cb
+注册一个异步回调函数
+ctx
+用于传递上下文信息的对象
+该接口主要用于检测指定节点是否存在,返回值是一个stat对象另外,如果在调用
+接口时注册 Watcher的话,还可以对节点是否存在进行监听一旦节点被创建、被删
+除或是数据被更新,都会通知客户端。
+清单5-12.使用同步AP检测节点是否存在
+package book. chapter05.$5_3_6;
+import java. util. concurrent. CountDownLatch;
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. WatchedEvent;
+import org. apache. zookeeper.Watcher;
+import org. apache. zookeeper. WatcherEvent. EventType;
+5.3java客户端APl使用113
+
+<==========================124end ==============================>
+<==========================125start==============================>
+
+import org. apache. zookeeper. Watcher. Event. KeeperState;
+import org. apache. zookeeper. ZooDefs. Ids;
+import org. apache. zookeeper. Zookeeper;
+ZooKeeper API检测节点是否存在,使用同步(sync)接口
+public class Exist_API_Sync_Usage implements Watcher
+private static CountDownLatch connectedSemaphore new CountDownLatch(1)
+private static ZooKeeper zk;
+public static void main(String [ args) throws Exception
+String path ="/zk-book";
+zk= new ZooKeeper("domain1.book. zookeeper:2181",
+5000,//
+new Exist_api_sync_Usage());
+connectedSemaphore.await()
+zk. exists( path, true )
+zk. create( path, " getBytes () Ids. OPEN_ACL_UNSAFE, CreateMode.
+PERSISTENT
+zk. setData( path, "123".getBytes () -1 )
+zk. create( path+"/", "" getBytes() Ids. OPEN_ACL_UNSAFE,
+CreateMode. PERSISTENT )
+zk. delete(path+"/c1",-1)
+zk. delete( path, -1 )
+Thread. sleep( Integer. MAX_VALUE
+}
+@Override
+public void process(WatchedEvent event){
+try
+if (KeeperState. SyncConnected ==event.getState()){
+if(EventType.none=event. getType()&null= event. getPath())
+{
+connectedSemaphore. countDown()
+} else if(EventType. NodeCreated=event. getType())
+System.out. println( "Node("+ event. getPath()+")Created")
+zk.exists event. getPath(),true);
+else if(EventType. NodeDeleted= event. getType())
+System.out. println( "Node(" event. getPath()+")Deleted");
+zk
+exists( event. getPath(), true )
+else if (EventType. NodeDataChanged ==event. getType())
+System. out. println "Node("+event getPath()+")DataChanged");
+114第5章 ZooKeeper使用
+
+<==========================125end ==============================>
+<==========================126start==============================>
+
+zk. exists event. getPath),true)
+catch (Exception e)
+运行程序,输出结果如下:
+Node(/zk-book)Created
+Node(/zk-book)DataChanged
+Node(/zk-book)Deleted
+在上面的示例程序中,针对节点/zk-book初始状态,服务器上是不存在该节点的),我
+们先后进行了如下操作。
+1.通过exists接口来检测是否存在指定节点,同时注册了一个Watcher
+2.创建节点/zk-book,此时服务端马上会向客户端发送一个事件通知: NodeCreated
+客户端在收到该事件通知后,再次调用 exists接口,同时注册 Watcher
+3.更新该节点的数据,这个时候,服务端又会向客户端发送一个事件通知:
+NodeDataChanged客户端在收到该事件通知后,继续调用 exists接口,同
+时注册 Watcher
+4.创建子节点/zk-book/cl
+5.删除子节点/zk-book/cl
+6.删除节点/zk-book。此时客户端会收到服务端的事件通知: NodeDeleted
+从上面6个操作步骤以及服务端对应的通知发送中,我们可以得出如下结论。
+·无论指定节点是否存在,通过调用 exists接口都可以注册 Watcher
+exists接口中注册的 Watcher,能够对节点创建、节点删除和节点数据更新事件
+进行监听。
+对于指定节点的子节点的各种变化,都不会通知客户端。
+5.3.7权限控制
+在 ZooKeeper的实际使用中,我们的做法往往是搭建一个共用的 ZooKeeper集群,统一
+为若干个应用提供服务。在这种情况下不同的应用之间往往是不会存在共享数据的使
+5.3java客户端APl使用115
+
+<==========================126end ==============================>
+<==========================127start==============================>
+
+用场景的,因此需要解决不同应用之间的权限问题。
+为了避免存储在 ZooKeeper服务器上的数据被其他进程干扰或人为操作修改,需要对
+ZooKeeper上的数据访问进行权限控制(Access Control) ZooKeeper提供了ACL的权
+限控制机制,简单的讲,就是通过设置 ZooKeeper服务器上数据节点的ACL,来控制客
+户端对该数据节点的访问权限:如果一个客户端符合该ACL控制,那么就可以对其进
+行访问,否则将无法操作。针对这样的控制机制, ZooKeeper提供了多种权限控制模式
+(Scheme),分别是 world、auth、 digest、ip和 super在本节中,我们主要讲解在digest
+模式下如何进行 ZooKeeper的权限控制。
+开发人员如果要使用 ZooKeeper的权限控制功能,需要在完成 ZooKeeper会话创建后,
+给该会话添加上相关的权限信息(AuthInfo) ZooKeeper客户端提供了相应的AP接口
+来进行权限信息的设置,如下
+addAuthInfo(String scheme, byte[] auth)
+AP方法的参数说明如表5-10所示。
+表5-10. ZooKeeper addAuthIn fo API方法参数说明
+参数名
+说明
+scheme
+权限控制模式,分为 world,auth、 digest、ip和 super
+auth
+具体的权限信息
+该接口主要用于为当前 ZooKeeper会话添加权限信息,之后凡是通过该会话对
+ZooKeeper服务端进行的任何操作,都会带上该权限信息。
+使用包含权限信息的 ZooKeeper会话创建数据节点
+清单5-13.使用包含权限信息的 ZooKeeper会话创建数据节点
+package book. chapter05.$5_3_7;
+import org. apache. zookeeper.CreateMode;
+import org. apache. zookeeper. ZooDefs. Ids;
+import org. apache. zookeeper. ZooKeeper;
+public class AuthSample
+final static String PATH "/zk-book-auth test";
+public static void main(Stringargs) throws Exception
+ZooKeeper zookeeper new ZooKeeper("domain1. book. zookeeper: 2181",50000,
+null);
+zookeeper. addAuthInfo("digest", "foo: true".getBytes());
+zookeeper. create(pathinit"(),ids. CREATORALLACL
+CreaThread. sleep( Integer. MAX_VALUE
+teMode. EPHEMERAL )
+116第5章 ZooKeeper使用
+
+<==========================127end ==============================>
+<==========================128start==============================>
+
+上面这个示例程序就是一个典型的对 ZooKeeper会话添加权限信息的使用方式。在
+这个示例中,我们采用了 digest模式,同时可以看到其包含的具体权限信息是
+foo:true,这非常类似于 username: password的格式完成权限信息的添加
+后,该示例还使用客户端会话在 ZooKeeper上创建了/zkk-book-auth-test节点,这样
+该节点就受到了权限控制。下面我们来看,针对这个数据节点, ZooKeeper是如何
+进行权限控制的。
+使用无权限信息的 ZooKeeper会话访问含权限信息的数据节点
+清单5-14.使用无权限信息的 ZooKeeper会话访问含权限信息的数据节点
+package book. chapter05.$5_3_7;
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. ZooDefs. Ids;
+import org. apache. zookeeper. Zookeeper;
+∥使用无权限信息的 ZooKeeper会话访问含权限信息的数据节点
+public class AuthSample_Get
+final static String PATH ="/zk-book-auth test";
+public static void main(String[ args) throws Exception
+ZooKeeper zookeeperl= new ZooKeeper"domain1. book. zookeeper: 2181",5000,
+null);
+zookeeper1. addAuthInfo("digest", "foo: true".getBytes ()
+zookeeperl. create( PATH, "init. getBytes(), Ids. CREATOR_ALL_ACL,
+CreateMode. EPHEMERAL)
+ZooKeeper zookeeper2 new ZooKeeper("domain1. book. zookeeper: 2181", 50000,
+null);
+zookeeper2. getData( PATH, false, null
+运行程序,输出异常信息如下:
+org. apache. zookeeper. KeeperExceptionNoAuthException:
+KeeperErrorCode= NoAuth for/zk-book-auth_test
+在上面这个示例程序中,我们首先通过一个包含权限信息的客户端会话创建了一个
+数据节点,然后使用另一个不包含权限信息的客户端会话对其进行访问,运行程序后,
+输出了异常信息: KeeperErrorCode= NoAuth for/zk-book-auth_test
+可见,一旦我们对一个数据节点设置了权限信息,那么其他没有权限设置的客户端
+会话将无法访问该数据节点, ZooKeeper服务端能够为我们实现权限控制。
+5.3java客户端APl使用117
+
+<==========================128end ==============================>
+<==========================129start==============================>
+
+使用错误权限信息的 ZooKeeper会话访问含权限信息的数据节点
+清单5-15.使用错误权限信息的 ZooKeeper会话访问含权限信息的数据节点
+package book. chapter05.$5_3_
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. ZooDefs.Ids;
+import org. apache. zookeeper. ZooKeeper;
+使用错误权 ZooKeeper限信息的会话访问含权限信息的数据节点
+public class AuthSample_Get2
+final static String PATH ="/zk-book-auth_test";
+public static void main(String[] args) thr
+rows E:
+kception
+ZooKeeper zookeeperl= new ZooKeeper("domain1.book. zookeeper:2181,5000,
+null);
+zookeeperl. addAuthInfo("digest", "foo: true".getBytes());
+zookeeper1. create(path,"init". getBytes(),
+Ids. CREATOR_ALL_ACL, CreateMode. EPHEMERAL )
+ZooKeeper zookeeperl new ZooKeeper ("domain1. book. zookeeper: 2181",5000,
+null);
+zookeeper2, addAuthInfo("digest", "foo:true".getBytes ()
+System. out. println( zookeeper2. getData( PATH, false, null ))
+ZooKeeper zookeeperl new ZooKeeper( "domain1. book. zookeeper: 2181",5000,
+null);
+zookeeper3. addAuthInfo("digest", "foo: false".getBytes ()
+zookeeper3.getData( PATH, false, null )
+运行程序,输出结果如下:
+[Ba7b7072
+org.apache. zookeeper. KeeperException$NoAuthException:
+KeeperErrorCode =NoAuth for /zk-book-auth_test
+在上面这个示例程序中,我们同样使用包含权限信息的客户端会话创建了数据节点,
+同时使用了两个权限信息,先后进行了两次数据节点内容的获取。第一次,我们使
+用了正确的权限信息,即 digest[ foo true],同时也成功获取到了数据节点的
+数据内容:[B7b7072;而在第二次接口调用中,由于使用了错误的权限信息,
+即 digest[foo: false],结果出现异常: KeeperErrorCode= NoAuth for
+zk-book-auth-test.可见, ZooKeeper的权限控制也能够为我们识别出错误
+的权限信息。
+在 ZooKeeper中,几乎所有的API接口操作,其权限控制策略都是和上面几个示例
+118第5 ZooKeeper章使用
+
+<==========================129end ==============================>
+<==========================130start==============================>
+
+类似的,但是对于删除节点(delete)接口而言,其权限控制比较特殊,清单5-16
+是删除节点接口的权限控制示例。
+清单5-16.删除节点接口的权限控制
+package book. chapter05.$5__7;
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. ZooDefs.Ids;
+import org. apache. zookeeper. ZooKeeper;
+∥删除节点接口的权限控制
+public class AuthSample_Delete
+final static String PATH ="/zk-book-auth_test";
+final static String PATH2 ="/zk-book-auth_test/child";
+public static void main(String [ args) throws Exception
+ZooKeeper zookeeperl =new ZooKeeper("domain1. book. zookeeper: 2181", 5000,
+null);
+zookeeperl. addAuthInfo("digest", "foo: true".getBytes())
+zookeeper1. create( PATH, "init " getBytes () Ids. CREATOR_ALL_ACL,
+CreateMode. PERSISTENT)
+zookeeper1. create( PATH2, "init".getBytes(), Ids. CREATOR_ALL_ACL
+CreateMode. EPHEMERAL)
+try
+ZooKeeper zookeeper2 =new ZooKeeper"domain1. book. zookeeper:
+2181,50000,null);
+zookeeper2. delete( PATH2, -1 )
+} catch( Exception)
+System.out. println("删除节点失败:"+e.getMessage())
+ZooKeeper zookeeper3 new ZooKeeper("domainl. book. zookeeper: 2181", 50000,
+null);
+zookeeper3. addAuthInfo("digest" "foo: true". getBytes());
+zookeeper3. delete(path2,-1)
+System.out. println("成功删除节点:"+ath2)
+ZooKeeper zookeeper4= new ZooKeeper"domain1. book. zookeeper: 2181",50000,
+null);
+zookeeper4. delete( PATH, -1 )
+System.out. println("成功删除节点:"+Ph)
+}
+运行程序,输出结果如下
+删除节点失败: KeeperErrorCode= NoAuth for/zk-book-auth
+test/child
+5.3ava客户端AP使用119
+
+<==========================130end ==============================>
+<==========================131start==============================>
+
+成功删除节点:/zk-book-auth_test/child
+成功删除节点:/zk-book-auth_test
+在上面这个示例程序中,第一次,我们使用没有包含权限信息的客户端会话进行数
+据节点删除操作,显然,程序运行过程中抛出了异常信息: KeeperErrorCode=
+NoAuth for/zk-book-auth test/child而在第二次接口调用中,由于使
+用了正确的权限信息,因此成功删除了数据节点,相信这也不难理解。
+下面我们着重来看第三次节点删除操作。需要注意的是,在这次删除操作中,我们
+使用的是没有包含权限信息的客户端会话,但最终却成功删除了数据节点。从这个
+例子中,我们可以看到,删除节点接口的权限控制比较特殊,当客户端对一个数据
+节点添加了权限信息后,对于删除操作而言,其作用范围是其子节点。也就是说,
+当我们对一个数据节点添加权限信息后,依然可以自由地删除这个节点,但是对于
+这个节点的子节点,就必须使用相应的权限信息才能够删除掉它。
+5.4开源客户端
+在5.3节中,我们讲解了如何使用 ZooKeeper Java客户端AP来进行一些基本操作,
+如创建会话、创建节点、读取数据、更新数据、删除节点和检测节点是否存在等。相信
+读者目前已经能够在自己的应用程序中开始简单地使用 ZooKeeper了
+在本节中,我们将围绕 ZkClient和 Curator两个开源的 ZooKeeper客户端产品,再来
+进一步看看如何更好地使用 ZooKeeper
+5.4.1 ZkClient
+ZkClient是 Github上一个开源的 ZooKeeper客户端,是由 Datameer的工程师 Stefan
+Groschupf和 Peter Voss一起开发的。 ZkClient在 ZooKeeper原生AP接口之上进行了包
+装,是一个更易用的 ZooKeeper客户端。同时, ZkClient在内部实现了诸如 Session超
+时重连、 Watcher反复注册等功能,使得 ZooKeeper客户端的这些繁琐的细节工作对开
+发人员透明。
+在本节中,我们将从创建会话、创建节点读取数据、更新数据、删除节点和检测节点
+是否存在等方面来介绍如何使用 ZkClient这个 ZooKeeper客户端。当然,由于底层实现
+还是对 ZooKeeper原生API的包装,因此本节中不会太过详细地进行原理性的描述。
+在讲解API之前,首先来看一下 ZkClient的 Maven依赖:
+120第5章 ZooKeeper使用
+
+<==========================131end ==============================>
+<==========================132start==============================>
+
+<dependencies>
+<dependency>
+<groupId>org. apache. zookeeper</groupId>
+<artifactId>zookeeper</artifactId>
+<version>${zookeeper. version)</version>
+</dependency>
+<dependency>
+<groupId>com. github. sgroschupf</groupId>
+<artifactId>zkclient</artifactId>
+<version>${zkclient. version}</version>
+</dependency>
+</dependencies>
+创建会话
+在5.3.1节中,我们已经介绍了如何通过实例化一个 ZooKeeper对象来完成会话的创建。
+在本节中,我们将介绍如何使用 ZkClient来完成同样的操作。在 ZkClient中,有如下7
+种构造方法:
+public ZkClient(String serverstring)
+public ZkClientString zkServers, int connectionTimeout)
+public ZkClient(String zkServers, int sessionTimeout, int connectionTimeout)
+public ZkClient(String zkServers, int sessionTimeout,
+int connectionTimeout, ZkSerializer zkSerializer)
+public ZkClient(IZKConnection connection)
+public Zkclient(IZkConnection connection, int connectionTimeout)
+public ZkClient(IZKConnection zkConnection int connectionTimeout,ZkSerializer
+zkSerializer)
+ZkClient构造方法参数说明如表5-11所示。
+表5-11. ZkClient构造方法参数说明
+参数名
+说明
+指 ZooKeeper服务器列表,由英文状态逗号分开的hostport字
+zkServers
+符串组成,每一个都代表一台 ZooKeeper机器例如
+192.168.1.1:2181,192.168.1.2:2181,192.168.1.3:2181
+sessionTimeout
+会话超时时间,单位为毫秒。默认是30000ms
+connectionTimeout
+连接创建超时时间,单位为毫秒。此参数表明如果在这个时间段内
+还是无法和 ZooKeeper建立连接,那么就放弃连接,直接抛出异常
+connection
+IZkConnection接口的实现类
+zkSerializer
+自定义序列化器
+注意,在 ZkClient的构造方法中,很多参数和 ZooKeeper原生的构造方法中的参数一致,
+所以表5-11中只是做简要介绍,具体可以参见表5-12中的相关介绍。
+在讲解使用 ZooKeeper原生API创建会话的时候,我们提到:“ZooKeeper会话的建立
+5.4开源客户端121
+
+<==========================132end ==============================>
+<==========================133start==============================>
+
+是一个异步的过程。”对于ZooKeeper客户端的这个特点,开发人员需要自己来进行等
+待处理。而 ZkClient通过内部包装,将这个异步的会话创建过程同步化了,这对于开发
+者的使用来说非常方便。
+接下来再看 IZkConnection接口org. IOItec. zkclient. IZkConnection接口
+是对 ZooKeeper原生接口最直接的包装,也是和 ZooKeeper最直接的交互层,里面包含
+了添、删、改、查等一系列接口的定义。 ZkClient默认提供对 IZkConnection接口的
+两种实现,分别是 ZkConnection和 InMemoryConnectic,前者是我们最常用的
+实现方式。通常开发人员不需要对 IZkConnection进行改造,直接使用
+ZkConnection这个实现就可以完成绝大部分的业务需求。
+在5.3.1节中,我们曾经提到过:“目前, ZooKeeper的节点内容只支持字节数组(byte])
+类型,也就是说, ZooKeeper不负责为节点内容进行序列化,开发人员需要自己使用序
+列化工具将节点内容进行序列化和反序列化。”ZkClient中定义了 ZkSerializer接
+口,允许用户传入一个序列化实现,如 Hessian或kryo,默认情况下, ZkClient使用java
+自带的序列化方式进行对象的序列化。注册完序列化器之后,客户端在进行读写操作的
+过程中,就会自动进行序列化和反序列化操作。
+最后,我们再来看看 ZkClient和 ZooKeeper原生构造方法的最大区别,那就是在 ZkClient
+的构造方法中,不再提供传入 Watcher对象的参数了。那么,客户端如何去监听服务端
+的相关事件呢?别担心, ZkClient引入了大多数Java程序都使用过的 Listener来实现
+Watcher注册。值得一提的是, ZkClient从AP级别来 Watcher支持监听的注册,这样
+的用法更贴近Java工程师的开发习惯。关于事件监听的注册方法,在后续章节中会做详
+细讲解。
+清单5-17.使用 ZkClient创建会话
+package book. chapter05.$5_4_1;
+import java. io. IOException;
+import org. IOItec. zkclient. ZkClient;
+∥使用 ZkClient来创建一个 ZooKeeper客户端
+public class Create_Session Sample
+public static void main(String[] args) throws IOException, InterruptedException
+ZkClient zkClient new ZkClient("domain1. book. zookeeper: 2181", 5000);
+System. out. println ("ZooKeeper session established.")
+运行程序,输出结果如下:
+122第5章 ZooKeeper使用
+
+<==========================133end ==============================>
+<==========================134start==============================>
+
+ZooKeeper session established.
+上面这个示例程序展示了如何使用 ZkClient来创建会话。
+创建节点
+ZkClient中提供了以下一系列接口来创建节点,开发者可以通过这些接口来进行各种类
+型的节点创建:
+String create(final String path, Object data, final CreateMode mode)
+String create(final String path, Object data, final List<ACL> acl, final
+CreateMode mode)
+void create(final String path, Object data, final CreateMode mode, final
+AsyncCallback. StringCallback callback, final Object context)
+void createEphemeral(final String path)
+void createEphemeral(final String path, final Object data)
+void createPersistent(String path);
+void createPersistent(String path, boolean createParents);
+void createPersistent(String path, Object data);
+void createPersistent(String path, ListACL> acl, Object data)
+String createPersistentSequential(String path, Object data);
+String createEphemeralSequential(final String path, final object data)
+该API方法的参数说明如表5-12所示。
+表5-12. ZkClient create APl参数说明
+参数名
+说明
+path
+指定数据节点的节点路径,即API调用的目的是创建该节点
+data
+节点的初始数据内容,可以传入nul
+mode
+节点类型,是一个枚举类型,通常有4种可选的节点类型
+acl
+节点的ACL策略
+callback
+注册一个异步回调函数
+context
+用于传递一个对象,可以在执行回调函数的时候使用
+createParents
+指定是否创建父节点
+在 ZkClient的创建节点API接口中,很多参数都和 ZooKeeper原生的创建节点AP接口
+比较相近,读者可以到表5-3中查看关于这些参数更进一步的讲解。
+ZkClient提供了较多的创建节点API接口其中前面三个接口和 ZooKeeper原生的创建
+节点API接口基本一致,唯一不同的地方在于,原生接口只允许传byte类型的参
+数,而 ZkClient提供的接口,由于支持了自定义序列化器,因此可以传入复杂对象作为
+参数。
+再来看后面的几个接口,从接口的名字上就可以看出这些接口将节点的创建类型隐藏在了方法
+名中,如 createEphemeral接口是创建临时节点,而 createPersistentSequential
+5.4开源客户端123
+
+<==========================134end ==============================>
+<==========================135start==============================>
+
+接口则是创建持久顺序节点。
+最后,我们再来看一个比较有趣的参数 createParents.在5.3.2节中我们提到过,
+ZooKeeper原生的APl在创建节点时无法做到递归建立节点,也就是说只有在父节点存
+在的情况下才能够建立子节点。但是,在很多情况下,类似于“创建一个节点之前,首
+先还需要去检查其父节点是否存在,如果不存在,那么还要先创建父节点”的安全性处
+理对于很多开发人员来说,是相当繁琐的工作。好在 ZkClient为我们解决了这个问题,
+通过 createParents这个参数, ZkClient能够在内部帮助我们递归建立父节点。
+清单5-18使用 ZkClient创建节点
+package book. chapter05. $5_4_1;
+import org.IOItec. zkclient.ZkClient;
+/使用 ZkClient创建节点
+public class Create_Node_Sample
+public static void main(String [ args) throws Exception
+ZkClient zkclient new ZkClient ("domain1.book.zookeeper: 2181",5000);
+String path "/zk-book/c1";
+zkClient. createPersistent(path, true);
+}
+在上面这个示例程序中,我们使用 ZkClient的 createPersistent接口创建节点,并
+且设置 createParents参数为true,表明需要递归创建父节点很显然,使用 ZkClient
+省去了很多繁琐的工作。
+另外, ZkClient的API中还提供了支持异步创建节点的方法,鉴于异步方式的使用和上
+文中讲解的非常类似,这里不再赘述,读者可以参考5.3.2节中的相关内容。
+删除节点
+在 ZkClient中,可以通过以下AP来删除指定节点:
+boolean delete(final String path)
+delete(final String path, final AsyncCallback VoidCallback callback, final
+object context)
+boolean deleteRecursive(String path)
+该API方法的参数说明如表5-13所示。
+124第5章 ZooKeeper使用
+
+<==========================135end ==============================>
+<==========================136start==============================>
+
+表5-13. ZkClient delete API参数说明
+参数名
+说明
+path
+数据节点的完整节点路径
+callback
+注册一个异步回调函数
+context
+用于传递上下文信息的对象
+通过调用这个接口,就可以对指定节点进行删除操作了。下面主要来看delete
+Recursive接口。在5.3.3节中,我们提到:在ZooKeeper中,只允许删除叶子节点。
+也就是说,如果一个节点存在至少一个子节点的话,那么该节点将无法被直接删除,必
+须先删除掉所有子节点。”但是在真正的生产使用中,我们的节点层级往往比较复杂,
+通常在4层左右。在这种情况下,如果每次都需要逐层遍历来删除节点,那么会非常繁
+琐。在 ZkClient中, deleteRecursive这个接口将自动帮我们完成逐层遍历删除节点
+的工作,这为开发人员带来了不少便利。
+删除节点接口的使用相对来说比较简单,读者可以在源代码包的book. chapter005.8541
+目录下自行查看 Del DataSamplejava文件即可。
+读取数据
+在上面的一些介绍中,相信读者已经能够感受到 ZkClient相较于 ZooKeeper原生p
+而言的简便之处。在本部分,我们将从“如何通过客户端来获取节点的子节点列表”和
+“如何获取节点数据内容”两方面来讲解ZKClient的使用方法。
+getChildren
+在 ZkClient中,可以通过以下AP来获取指定节点的子节点列表:
+List<String>getChildren(String path)
+ZkClient只提供了一个对外API,用于获取指定节点的子节点列表。这个API的返回值
+是子节点的相对路径,例如, ZooKeeper服务器上存在/zk-book/c和/zk-book/c2这样两
+个节点,那么调用该API获取/zk-book的子节点列表,返回值是[cl,c2]
+细心的读者可能已经发现了一个问题,和 ZooKeeper原生APl相比, ZkClient提供的
+API没有了 Watcher注册的功能。在本节“创建会话”部分中我们已经提到, ZkClient
+中引入了 Listener的概念,客户端可以通过注册相关的事件监听来实现对 ZooKeeper服
+务端事件的订阅。在获取子节点列表这个接口上,可以通过如下API来进行注册监听
+List<String>subscribeChildChanges( path, IZkChildListener listener)
+通过该AP的调用,就完成了事件监听的注册。从AP方法中,我们可以看出,注册的
+54开源客户端125
+
+<==========================136end ==============================>
+<==========================137start==============================>
+
+是对子节点列表变更的监听,也就是说,一旦子节点列表发生变更, ZooKeeper服务端
+就会向客户端发出事件通知,由这个 Listener来处理。下面给出这个 Listener接口的定
+义:
+public interface IZkChildListener
+public void handleChildChange(String parentPath, List<String> currentChilds)
+throws Exception;
+在这个接口定义中,只有一个接口方法 handleChi,用来处理服务端发送
+过来的事件通知。该API方法的参数说明如表5-14所示。
+表5-14. IZkChildListener API参数说明
+参数名
+说明
+parentPath
+子节点变更通知对应的父节点的节点路径
+currentChilds
+子节点的相对路径列表,如果没有子节点,那么会传入null
+如果客户端对指定节点 nodeA注册了 IZkChildL监听,那么将会接收到如
+表5-15所示的事件通知。
+表5-15. IZkChildListener事件说明
+事件类别
+说明
+指定节点 nodeA新增子节点。此时在 handleChildChange方法
+新增子节点
+中, parentPathnodeA收到的是的全路径, currentChilds是
+最新的子节点列表(相对路径)
+指定节点 nodeAhandleChil减少子节点。此时在方法
+减少子节点
+中, parentPath收到的是 nodeA的全路径, currentChilds是
+最新的子节点列表(相对路径),可能是null
+删除节点 nodeA
+指定节点 nodeA被删除。此时在 handleChildChange方法中,
+parentPathnode收到的是的全路径, currentChilds nul
+下面,我们通过实际代码来看看 getChild接口以及子节点列表变更监听的使用方
+式。
+清单5-19.使用 ZClient获取子节点列表
+package book. chapter05.$5 4_
+import java.util.List;
+import org. IOItec. zkclient. IZkChildListener;
+import org. IoItec. zkclient. Zkclient;
+∥使用 ZKClient获取子节点列表
+public class Get Children_Sample
+public static void main(String [ args) throws Exception
+String path "/zk-book";
+126第5章 ZooKeeper使用
+
+<==========================137end ==============================>
+<==========================138start==============================>
+
+ZkClient zkclient new ZkClient( "domain1.book. zookeeper: 2181", 5000);
+zkClient. subscribeChildChanges(path, new IZkChildListener()
+public void handlechildChange(String parentPath, List<String> currentChilds)
+throws Exception
+System. out.println(parentPath +"'s child changed, currentChilds:"+
+currentChilds);
+});
+zkClient. createPersistent(path);
+Thread. sleep(1000);
+System.out.println(zkClient.getChildren(path));
+Thread. sleep(1000);
+zkClient. createPersistent(path+"/c1")
+Thread. sleep( 1000 )
+zkClient. delete(path+"/c1");
+Thread. sleep(1000)
+zkclient. delete(path);
+Thread. sleep( Integer. MAX_VALUE
+运行程序,输出结果如下:
+/zk-book ' child changed, currentChilds: [
+/zk-book 's child changed, currentChilds: [c1]
+/zk-book's child changed, currentchilds: [
+/zk-book 's child changed, currentChilds: null
+在上面这个示例程序中,首先对/zk-book注册了 IZkChildListener监听,此时该节
+点并不存在。当创建了/zk-book节点后,客户端立即会收到来自服务端的事件通知,当
+然此时接收到的子节点列表为null。然后继续创建节点/zk-book/c1,此时客户端就会收
+到子节点列表变更通知,同时收到最新的子节点列表为[c]随后,我们删除了/zk-book/cl
+节点,客户端同样会收到事件变更通知。最后,当将/zk-book节点本身删除的时候,客
+户端收到了事件通知,同时可以发现,此时子节点列表为null。
+从上面的示例程序和输出结果中,我们可以得出以下3个结论。
+·客户端可以对一个不存在的节点进行子节点变更的监听。
+●一旦客户端对一个节点注册了子节点列表变更监听之后,那么当该节点的子节点列
+表发生变更的时候,服务端都会通知客户端并将最新的子节点列表发送给客户端。
+该节点本身的创建或删除也会通知到客户端。
+另外,还需要明确的一点是,和 ZooKeeper原生提供的 Watcher不同的是, ZkClient的
+5.4开源客户端127
+
+<==========================138end ==============================>
+<==========================139start==============================>
+
+Listener不是一次性的,客户端只需要注册一次就会一直生效。
+getData
+在 ZkClient中,可以通过以下API来获取指定节点的数据内容:
+<T extends Object> T readData(String path)
+<T extends Object> T readData(String path, boolean returnNullIfPathNotExists)
+<T extends Object> T readData(String path, Stat stat)
+该API方法的参数说明如表5-16所示。
+表5-16. ZkClient getData API参数说明
+参数名
+说明
+默认情况下,在调用该API的时候,如果指定的节点不
+存在,那么会抛出异常:org. apache. zookeeper.
+returnNullIfPathNotExists KeeperExceptionsNoNo如果设置了
+这个参数,那么如果节点不存在,就直接返回null,而不
+会抛出异常
+指定数据节点的节点状态信息。用法是在接口中传入一
+stat
+个旧的stat变量,该stat变量会在方法执行过程中,
+被来自服务端响应的新stat对象替换
+通过调用这个接口,就可以获取指定节点的数据内容。注意,方法的返回值,在 ZkClient
+内部已经被反序列化成指定对象。
+另外,该接口对服务端事件的监听,同样是通过注册指定的 Listener来实现的:
+public interface IZkDataListener
+public void handleDataChange(String dataPath Object data) throws Exception;
+public void handleDataDeleted(String dataPath throws Exception;
+在这个 Listener接口中,有两个接口方法 handleDataCh和 handleDataDeleted,用
+于处理服务端发来的两类事件通知,分别为“节点内容变更”和“节点删除”事件。该AP方
+法的参数说明如表5-17所示。
+表5-17. IZkDataListener API参数说明
+参数名
+说明
+dataPath
+事件通知对应的节点路径
+data
+最新的数据内容
+如果客户端对指定节点 nodeA注册了 IZkDataLis监听,那么将会接收到如
+表5-18所示的来自服务端的事件通知。
+128第5章 ZooKeeper使用
+
+<==========================139end ==============================>
+<==========================140start==============================>
+
+表5-18. IZkDataListener事件说明
+事件类别
+说明
+指定节点 nodeA的数据内容(content)或是数据版本(version)发
+节点数据变化
+生变更,都会触发这个事件。此时在 handleDatac方法中,
+dataPathnodeA收到的是的全路径,data是最新的数据节点内容
+指定节点 nodeA被删除。此时在 handleDataDelet方法中,
+删除节点 nodeA
+dataPath收到的是 nodeA的全路径
+下面,我们通过实际代码来看看getData接口以及子节点列表变更监听的使用方式。
+清单5-20.使用 ZClient获取节点数据内容
+package book. chapter05.$5_4_1;
+import org. IOItec. zkclient. IZKDataListener;
+import org. I0Itec. zkclient. ZkClient;
+∥使用 ZKClient获取节点数据内容
+public class Get Data_ Sample
+public static void main(String[] args) throws Exception
+string path ="/zk-book";
+ZkClient zkclient new ZkClient ("domain1 book. zookeeper: 2181", 5000);
+zkClient. createEphemeral(path,"123");
+zkClient. subscribeDataChanges(path, new IZKDataListener (
+public void handleDataDeleted(String dataPath) throws Exception
+System.out. println("node"+ dataPath+" deleted."
+}
+public void handleDataChange(String dataPath, Object data) throws Exception
+{
+System, out. println( "Node " dataPath+"changed, new data: " data);
+System. out. println(zkClient. readData(path));
+zkclient. writeData(path, "456);
+Thread. sleep(1000);
+zkClient.delete(path);
+Thread.sleep( Integer. MAX_VALUE )
+}
+}
+运行程序,输出结果如下:
+123
+Node /zk-book changed, new data: 456
+Node /zk-book deleted.
+在上面这个示例程序中,首先创建了节点/k-book,并且调用 readData接口来获取其
+5.4开源客户端|129
+
+<==========================140end ==============================>
+<==========================141start==============================>
+
+数据内容,同时在该节点上注册了 IZkDataListener监听,实现对该节点数据变更
+的监听。这样一来,之后凡是该节点数据变化或是该节点被删除,服务端都会向客户端
+发出事件通知。
+更新数据
+在 ZkClient中,可以通过以下AP来更新指定节点的数据:
+void writeData(String path, Object data)
+void writeData(final String path, Object data, final int expectedVersion)
+该API方法的参数说明如表5-19所示。
+表5-19. ZkClient writeData API参数说明
+参数名
+说明
+path
+数据节点的完整节点路径
+data
+数据内容,可以是null
+预期的数据版本。在5.3.5节中,我们已经提到过, ZooKeeper的数据节
+expectedVersion点有数据版本的概念可以使用这个数据版本来实现类似CAS的原子操作
+通过调用这个接口,就可以对指定节点进行数据更新了。该接口的使用相对来说比较简
+单,读者可以在源代码包的book. chapter05854_1目录下自行查看DataSamplejava
+文件。
+检测节点是否存在
+在 ZkClient中,可以通过以下API来检测指定节点是否存在:
+boolean exists(final String path)
+通过调用这个接口,就可以检测指定节点是否存在了。该接口的使用相对来说比较简单,
+读者可以在源代码包的 book chapter05.5_1目录下自 Exist行查看NodeSamplejava
+文件。
+5.4.2 Curator
+在上一节中,我们介绍了 ZkClient这个 ZooKeeper的开源客户端,并通过一些实例,体
+验了 ZkClient相较于 ZooKeeper原生API接口的便捷之处。在本节中,我们将介绍另一
+个开源的 ZooKeeper客户端 Curator
+130第5 ZooKeeper章使用
+
+<==========================141end ==============================>
+<==========================142start==============================>
+
+Curator是 Netflix公司开源的一套 ZooKeeper客户端框架,作者是 Jordan Zimmerman
+和 ZkClient一样, Curator解决了很多 ZooKeeper客户端非常底层的细节开发工作,包
+括连接重连、反复注册 Watcher和 NodeExists Exception异常等,目前已经成为了
+ApacheZ的顶级项目,是全世界范围内使用最广泛的客户端之一, Patrick Hunt
+(ZooKeeper代码的核心提交者)以一句“Guava is to Java what Curator is to ZooKeeper
+(Curator对于 ZooKeeper,可以说就像Guaa工具集对于java平台一样,作用巨大)对
+其进行了高度评价。
+除了封装一些开发人员不需要特别关注的底层细节之外, Curator还在 ZooKeeper原生
+API的基础上进行了包装,提供了一套易用性和可读性更强的 Fluent风格的客户端AP
+框架。
+除此之外, Curator中还提供了 ZooKeeper各种应用场景(Recipe,如共享锁服务、 Maste
+选举机制和分布式计数器等)的抽象封装。
+在讲解API之前,首先来看一下 Curator的 Maven依赖:
+<dependency>
+<groupId>org. apache. curator</groupId>
+<artifactId>curator-framework</artifactId>
+<version>2.4. </version>
+</dependency>
+创建会话
+在5.3.1节和5.4.1节中,我们分别介绍了 ZooKeeper原生API和 ZkClient两种客户端创
+建会话的方法,总体来说,这两种客户端的创建方式还是比较类似的,但是使用 Curator
+客户端创建会话的过程就和上面提到的两种客户端产品有很大的不同,具体如下。
+1.使用 CuratorFrameworkFactory这个工厂类的两个静态方法来创建一个客户
+端:
+static CuratorFramework newclient(String connectString, RetryPolicy
+retryPolicy);
+static CuratorFramework newclient(String connectString,
+int sessionTimeoutMs
+int connectionTimeoutMs
+RetryPolicy retryPolicy)
+注5: Jordan ZimmermanCurator是项目代码的核心提交者(Committer)及项目管理委员会Project
+Management Committee, PMC), https: //github. com/randgalt.,PMC)主席,其官方主页是:htpsgib.com/randglt
+54开源客户端131
+
+<==========================142end ==============================>
+<==========================143start==============================>
+
+2.通过调用 CuratorF ramework中的start()方法来启动会话
+表5-20对构造方法中的各参数进行了说明。
+表5-20. Curator会话创建AP参数说明
+参数名
+说明
+指 ZooKeeper服务器列表,由英文状态逗号分开的hostport
+connectstring
+字符串组成,每个都代表机器,例如
+192.168.1.1:2181,192.168.1.2:2181,192.168.1.3:21
+81
+retryPolicy
+重试策略。默认主要有四种实现,分别是 Exponential Backoff
+Retry. RetryNTimes, RetryOneTime, RetryUntilElapsed
+sessionTimeoutMs
+会话超时时间,单位为毫秒。默认是60000ms
+connectionTimeoutMs
+连接创建超时时间,单位为毫秒。默认是15000ms
+在重试策略上, Curator通一个接口 RetryPolicy来让用户实现自定义的重试策略。
+在 RetryPolicy接口中只定义了一个方法:
+boolean allowRetry(int retryCount, long elapsedTimeMs, RetrySleeper sleeper)
+RetryPolicy接口参数说明如表5-21所示。
+表5-21. RetryPolicy接口参数说明
+参数名
+说明
+retryCount
+已经重试的次数。如果是第一次重试,那么该参数为0
+elapsedTimeMs
+从第一次重试开始已经花费的时间,单位为毫秒
+sleeper
+用于 sleep指定时间 Curator建议不要使用 Thread. sleep来进行 sleep
+操作
+使用 Curator创建会话
+清单5-21.使用 Curator创建会话
+package book. chapter05.$5_;
+import org. apache. curator. RetryPolicy;
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator. framework. CuratorFrameworkFactory;
+import org. apache. curator. retry ExponentialBackoffRetry;
+∥使 Curator用来创建一个 ZooKeeper客户端
+public class Create_Session_ Sample
+public static void main(String [ args) throws Exception{
+RetryPolicy retryPolicy=new ExponentialE(1000,3)
+CuratorFramework client
+CuratorFrameworkFactory. newclient ("domain1. book. zookeeper: 2181",
+5000
+3000,
+retryPolicy);
+132第5章 ZooKeeper使用
+
+<==========================143end ==============================>
+<==========================144start==============================>
+
+client.start()
+Thread. sleep(Integer. MAX_VALUE);
+在上面这个示例程序中,我们首先创建了一个名为 ExponentialBackof fRetry的重
+试策略,该重试策略是 Curator默认提供的几种重试策略之一,其构造方法如下:
+ExponentialBackof fRetry(int basesleepTimeM, int maxRetries)
+ExponentialBackoffRetry (int baseSleepTimeMs int maxRetries, int maxsleepMs)
+ExponentialBackof fRetry构造方法参数说明如表5-22所示。
+表5-22. ExponentialBackof fRetry构造方法参数说明
+参数名
+说明
+baseSleepTimeMs
+初始 sleep时间
+maxRetries
+最大重试次数
+maxSleepMs
+最大 sleep时间
+ExponentialBackof fRetry的重试策略设计如下。
+给定一个初始 sleep时间 baseSleepTimeMs,在这个基础上结合重试次数,通过以下
+公式计算出当前需要 sleep的时间:
+当前 sleep时间= baseSleepTimeM*math.max(l, random. nextInt(1
+<<(retryCount+1)))
+可以看出,随着重试次数的增加,计算出的 sleep时间会越来越大。如果该 sleep时间在
+maxsleepMs的范围之内,那么就使用该slep时间,否则使用 maxsleepMs另外,
+maxRetries参数控制了最大重试次数,以避免无限制的重试。
+从上面的示例程序中还可以看出, CuratorFramew工厂在创建出一个客
+户端 CuratorFramework实例之后,实质上并没有完成会话的创建,而是需要调用
+CuratorFramework的 start()方法来完成会话的创建。
+使用 Fluent风格的AP接口来创建会话
+Curator提供的AP接口在设计上最大的亮点在于其遵循了 Fluent设计风格,这也是和
+ZooKeeper原生API以及 ZKClient客户端有很大不同的地方清单5-22展示了如何使用
+Fluent风格的AP接口来创建会话。
+清单5-22.使用 Fluent风格的AP1接口创建会话
+package book. chapter05.$5_4_2;
+import org. apache. curator. RetryPolicy;
+5.4开源客户端133
+
+<==========================144end ==============================>
+<==========================145start==============================>
+
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator. framework CuratorFrameworkFactory:
+import org. apache. curator. retry. ExponentialBackoffRetry;
+∥使 Fluent用风格的API接口来创建一个 ZooKeeper客户端
+public class Create_ Session_Sample_fluent
+public static void main(String [ args) throws Exception{
+RetryPolicy retryPolicy= new ExponentialBackoffRet(1000,3):
+CuratorFramework client
+CuratorFrameworkFactory. builder()
+connectString("domain1. book. zookeeper: 2181")
+sessionTimeoutMs(5000)
+. retryPolicy(retryPolicy)
+.build();
+client.start()
+Thread. sleep(Integer. MAX_VALUE);
+使用 Curator创建含隔离命名空间的会话
+为了实现不同的 ZooKeeper业务之间的隔离,往往会为每个业务分配一个独立的命名空
+间,即指定一个 ZooKeeper根路径。例如,下面所示的代码片段中定义了某一个客户端
+的独立命名空间为/base,那么该客户端对 ZooKeeper上数据节点的任何操作,都是基于
+该相对目录进行的:
+CuratorFrameworkFactory. builder()
+connectString ("domain1. book. zookeeper: 2181")
+.sessionTimeoutMs(5000)
+retryPolicy(retryPolicy)
+namespace("base")
+.build();
+读者可以在7.3.2节中了解更多关于客户端隔离命名空间的内容。
+创建节点
+Curator中提供了一系列 Fluent风格的接口,开发人员可以通过对其进行自由组合来完
+成各种类型节点的创建。
+清单5-23. Curator创建节点的APl
+CuratorFramework
+--public CreateBuilder create()
+CreateBuilder
+--public
+ProtectACLCreateModePathAndBytesable<String>creatingParentsIfNeeded();
+CreateModable
+134第5 ZooKeeper章使用
+
+<==========================145end ==============================>
+<==========================146start==============================>
+
+--public T withMode(CreateMode mode);
+PathAndBytesable<T>
+--public T forPath(String path, byte] data) throws Exception;
+.--public T forPath(String path) throws Exception;
+以上就是一系列最常用的创建节点API,下面通过一些场景来说明如何使用这些API
+创建一个节点,初始内容为空
+client. create(). forPath(path);
+注意,如果没有设置节点属性,那么 Curator默认创建的是持久节点,内容默认是
+空。这里的 client是指上文中提到的一个已经完成会话创建并启动的 Curator客
+户端实例,即 CuratorF ramework对象实例。
+创建一个节点,附带初始内容
+client. create(). forPath(path,"init".getBytes());
+也可以在创建节点的时候写入初始节点内容。和 ZkClient不同的是, Curator仍然
+是按照 ZooKeeper原生AP的风格,使用byte]作为方法参数。
+创建一个临时节点,初始内容为空
+client. create(). withMode( CreateMode. EPHEMERAL). forPath(
+创建一个临时节点,并自动递归创建父节点
+client. create() creatingParentsIfNeeded ().withMode( Create
+Mode. EPHEMERAL). forPath(path);
+这个接口非常有用,在使用 ZooKeeper的过程中,开发人员经常会碰到
+NoNodeException异常,其中一个可能的原因就是试图对一个不存在的父节点
+创建子节点。因此,开发人员不得不在每次创建节点之前,都判断一下该父节点是
+否存在这个处理通常让人厌恶在使用 Curator之后,通过调用
+creatingParentsifNeeded接口, Curator就能够自动地递归创建所有需要的
+父节点。
+同时要注意的一点是,由于在 ZooKeeper中规定了所有非叶子节点必须为持久节点,
+调用上面这个AP之后,只有path参数对应的数据节点是临时节点,其父节点均
+为持久节点。
+5.4开源客户端135
+
+<==========================146end ==============================>
+<==========================147start==============================>
+
+下面通过一个实际例子来看看如何在代码中使用这些API
+清单5-24, Curator创建节点AP实例
+package book. chapter05.$5_4_2;
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator. framework. CuratorFrameworkFactory;
+import org. apache. curator. retry. ExponentialBackoffRetry;
+import org. apache. zookeeper. CreateMode;
+使 Curator用创建节点
+public class Create_ Node_Sample
+static String path "/zk-book/";
+static CuratorFramework client=CuratorFrameworkFactory. builder()
+connectString ("domainl. book. zookeeper: 2181")
+sessionTimeoutMs(5000)
+retryPolicy(new ExponentialBackoffRetry(1000,3))
+build()
+public static void main (String[ args) throws Exception
+client.start()
+client.create(
+creatingParentsI fNeeded()
+.withMode(CreateMode. EPHEMERAL)
+forPath(path, "init". getBytes());
+删除节点
+在 Curator中,可以通过以下API来删除指定节点:
+清单5-25. Curator删除节点AP
+CuratorFramework
+--public DeleteBuilder delete();
+Versionable<T>
+--public T withVersion(int version);
+DeleteBuilder
+--public DeleteBuilderBase guaranteed()
+PathAndBytesable<T
+--public T forPath(String path, byte] data) throws Exception;
+--public T forPath(String path) throws Exception;
+以上就是一系列最常用的删除节点API,下面通过一些场景来说明如何使用这些AP
+删除一个节点
+client. delete(). forPath(path);
+136第5章 ZooKeeper使用
+
+<==========================147end ==============================>
+<==========================148start==============================>
+
+注意,使用该接口,只能删除叶子节点。
+删除一个节点,并递归删除其所有子节点
+client. delete(). deletingChildrenIfNeeded(). forPath(path)
+删除一个节点,强制指定版本进行删除
+client. delete(). withVersion( version). forPath(path)
+删除一个节点,强制保证删除
+client. delete(). guaranteed(). forPath(path);
+注意, guaranteed()接口是一个保障措施,只要客户端会话有效,那么 Curator
+会在后台持续进行删除操作,直到节点删除成功。
+下面通过一个实际例子来看看如何在代码中使用这些API
+清单5-26. Curator删除节点APl示例
+package book. chapter05.$5_4_2
+import org. apache. curator. framework CuratorFramework;
+import org. apache. curator. framework. CuratorFrameworkFactory;
+import org. apache. curator. retry. Exponentia fRetry
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. data.Stat;
+∥使 Curator用删除节点
+public class Del_Data_Sample
+static String path "/zk-book/c1";
+static CuratorFramework client= CuratorFrame. builder()
+connectString ("domain1. book. zookeeper: 2181")
+. sessionTimeoutMs(5000)
+retryPolicy(new ExponentialBackof fRetry(1000, 3))
+.build()
+public static void main(Stringargs) throws Exception
+client. start();
+client. create()
+creatingParentsIfNeeded()
+withMode(CreateMode. EPHEMERAL)
+forPath(path, "init". getBytes())
+Statstat= new Stat()
+client. getData(). storingStatIn(stat). forPath(path);
+client. delete(). deletingChildrenIfNeeded(
+.withVersion(stat. getVersion )) forPath(path);
+5.4开源客户端137
+
+<==========================148end ==============================>
+<==========================149start==============================>
+
+上面这个程序就是一个简单的节点删除实例。这里重点讲解 guaranteed()这个方法。
+正如该接口的官方文档中所注明的,在 ZooKeeper客户端使用过程中,可能会碰到这样
+的问题:客户端执行一个删除节点操作,但是由于一些网络原因,导致删除操作失败。
+对于这个异常,在有些场景中是致命的,如“Master选举”在这个场景中, ZooKeeper
+客户端通常是通过节点的创建与删除来实现的。针对这个问题, Curator中引入了一种
+重试机制:如果我们调用了 guaranteed(方法,那么当客户端碰到上面这些网络异
+常的时候,会记录下这次失败的删除操作,只要客户端会话有效,那么其就会在后台反
+复重试,直到节点删除成功。通过这样的措施,就可以保证节点删除操作一定会生效。
+读取数据
+下面来看如何通过 Curator接口来获取节点的数据内容。
+清单5-27. Curator读取数据Ap
+CuratorFramework
+--public GetDataBuilder getData();
+Statable<T>
+--public storingStatIn(Stat stat);
+Pathable<T>
+--public T forPath(String path) throws Exception;
+以上就是一系列最常用的读取数据节点内容的API接口,下面通过一些场景来说明如何
+使用这些API
+读取一个节点的数据内容
+client. getData). forPath(path)
+注意,该接口调用后的返回值是byte[]。
+读取一个节点的数据内容,同时获取到该节点的stat
+client. getData(). storingStatIn(stat). forPathpath)
+Curator通过传入一个旧的stat变量的方式来存储服务端返回的最新的节点状态
+信息。
+下面通过一个实际例子来看看如何在代码中使用这些API
+清单5-28. Curator读取数据AP实例
+package book. chapter055.$5_4_2;
+138第5章 ZooKeeper使用
+
+<==========================149end ==============================>
+<==========================150start==============================>
+
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator. framework. CuratorFrameworkFactory;
+import org. apache. curator. retry. ExponentialB
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper.data.Stat;
+使 Curator用获取数据内容
+public class Get_Data_Sample
+static String path ="/zk-book";
+static CuratorFramework client =CuratorFrameworkFactory. builder()
+. connectString("domain1.book. zookeeper:2181)
+sessionTimeoutMs(5000)
+retryPolicy(new ExponentialBackoffRetr(1000, 3))
+.build()
+public static void main(String[] args) throws Exception
+client.start();
+ont
+client. create()
+creatingParentsifNeeded()
+.withMode(CreateMode. EPHEMERAL)
+forPath(path, "init".getBytes());
+Statstat= new Stat()
+System. out. println(new
+String(client.getData(). storingStatIn(stat). forPath(path)));
+更新数据
+在 Curator中,可以通过以下API来更新指定节点的数据。
+清单5-29. Curator更新数据APl
+CuratorFramework
+--public SetDataBuilder setData()
+Versionable<T>
+--public T withVersion(int version);
+PathAndBytesable<T>
+--public T forPath(String path, byte[] data) throws Exception;
+--public T forPath(String path) throws Exception;
+以上就是一系列最常用的更新数据AP,下面通过一些具体场景来说明如何使用这些
+API.
+更新一个节点的数据内容
+client. setData(). forPath(path)
+调用该接口后,会返回一个stat对象。
+5.4开源客户端139
+
+<==========================150end ==============================>
+<==========================151start==============================>
+
+更新一个节点的数据内容,强制指定版本进行更新
+client. setData(). withVersion( version). forPath(path)
+注意, withVersion接口就是用来实现as(Compare and Swap)的, version
+(版本信息)通常是从一个旧的stat对象中获取到的。
+下面通过一个实际例子来看看如何在代码中使用这些AP
+清单5-30. Curator更新数据AP实例
+package book. chapter05.$5_4_
+import org. apache. curator. framework. CuratorFrameworki
+import org. apache. curator. framework. CuratorFrameworkFactory;
+import org. apache. curator. retry. ExponentialBa
+import org. apache. zookeeper. CreateMode;
+import org. apache. zookeeper. data. Stat;
+∥使用 Curator更新数据内容
+public class Set_Data_Sample
+static String path "/zk-book";
+static CuratorFramework client =CuratorFrameworkFactory. builder()
+connectString ("domain1. book. zookeeper: 2181")
+sessionTimeoutMs(5000)
+retryPolicy (new ExponentialBackoffRetry(1000, 3))
+.build();
+public static void main(String[] args) throws Exception
+client.start();
+client. create()
+.creatingParentsIfNeeded()
+.withMode(CreateMode. EPHEMERAL)
+forPath(path, "init".getBytes());
+Stat stat= new Stat()
+client. getData(). storingStatIn(stat). forPath(path)
+System.out. println("Success set node for:"+path+", new version:
++
+client. setData(). withVersion(stat. getVersion()). forPath(path). getVersion());
+try
+client. setData() withVersion(stat. getVersion()). forPath(path);
+catch (Exception e){
+System.out. println("Fail set node due to "+e. getMessage())
+运行程序,输出结果如下:
+140第5 ZooKeeper章使用
+
+<==========================151end ==============================>
+<==========================152start==============================>
+
+Success set node for /zk-book, new version: 1
+Fail set node due to KeeperErrorCode =BadVersion for /zk-book
+上面的示例程序演示了如何使用 Curator的AP进行 ZooKeeper数据节点的内容更新
+该程序前后进行了两次更新操作,第一次使用最新的stat变量进行更新操作,更新成
+功;第二次使用了过期的stat变量进行更新操作,抛出异常: KeeperErrorCode=
+BadVersion.
+异步接口
+到目前为止,我们已经知道了如何使用 Curator进行创建会话、创建节点、删除节点、
+读取数据和更新数据等操作。值得一提的是,在前面几节中,我们都使用了 Curator框
+架提供的同步接口,而在本节中,我们将向读者讲解如何通过 Curator实现异步操作。
+Curator中引入了 Backg roundCallback接口,用来处理异步接口调用之后服务端返
+回的结果信息,其接口定义如下。
+清单5-31. BackgroundCallback接口
+public interface BackgroundCallback{
+/*
+Called when the async background operation completes
+*@param client the client
+*param event operation result details
+* throws Exception errors
+*/
+public void processResult(CuratorFramework client, CuratorEvent event)throws
+Exception;
+BackgroundCallback接口只有一个 processRes方法,从注释中可以看出,该
+方法会在操作完成后被异步调用。该方法的参数说明如表5-23所示。
+表5-23. BackgroundCallback接口方法参数说明
+参数名
+说明
+client
+当前客户端实例
+event
+服务端事
+对于 BackgroundCallback接口,我们重点来看 CuratorEvent这个参数。
+CuratorEvent定义了 ZooKeeper服务端发送到客户端的一系列事件参数,其中比较
+重要的有事件类型和响应码两个参数。
+5.4开源客户端141
+
+<==========================152end ==============================>
+<==========================153start==============================>
+
+事件类型(CuratorEventType)
+getType(),代表本次事件的类型,主要有 CREATE DELETE EXISTS.get_DATA SETdA、
+CHILDREN、SNC、 GETACL、 WATCHED和 CLOSING,分别代表 Curator Framework
+create(). CuratorFramework#delete(). Curator Framework# check Exists().
+CuratorFramework#getData( ) CuratorFramework setData(), Curator Frame
+work#getChildren( CuratorFramework# sync(String, Object). Curator Frame
+work#getACL(). Watchable# using Watcher(Watcher)/ Watchab le# watched (
+和 ZooKeeper客户端与服务端连接断开事件。
+响应码(int)
+响应码用于标识事件的结果状态,所有响应码都被定义在org. apache. zookeeper.
+KeeperException.code类中,比较常见的响应码有0(Ok)、-4(ConnectionLoss)
+-110(NodeExists)和-112(SessionExpired)等,分别代表接口调用成功、客户端与服
+务端连接已断开、指定节点已存在和会话已过期等。
+读者可以在org. apache. curator. framework.api. CuratorEvent类中对
+CuratorEvent做更深入的了解。在程序中,我们可以通过以下AP来进行异步操作。
+清单5-32. Curator异步化A
+Backgroundable<T>
+--public inBackground();
+--public T inBackground(Object context);
+--public T inBackground(BackgroundCallback callback);
+--public inBackground(BackgroundCallback callback, Object context);
+---public inBackground(BackgroundCallbac callback, Executor executor);
+--public T inBackground(BackgroundCallback callback, Object context, Executor
+executor);
+在这些API接口中,我们重点来关注下 executor这个参数。在 ZooKeeper中,所有
+异步通知事件处理都是由 EventTh read这个线程来处理的 EventThread线程用
+于串行处理所有的事件通知。 EventThread的“串行处理机制在绝大部分应用场景
+下能够保证对事件处理的顺序性,但这个特性也有其弊端,就是一旦碰上一个复杂的处
+理单元,就会消耗过长的处理时间,从而影响对其他事件的处理。因此,在上面的
+inBackground接口中,允许用户传入一个Executor实例,这样一来,就可以把那
+些比较复杂的事件处理放到一个专门的程池中去,如 Executors. newFixed
+ThreadPool( 2 )
+142第5 ZooKeeper章使用
+
+<==========================153end ==============================>
+<==========================154start==============================>
+
+下面,我们通过一个实际例子来看看如何使用 Curator的异步接口。
+清单5-33. Curator异步化APl使用实例
+package book. chapter05.$5_4_2;
+import java.util. concurrent. CountDownLatch;
+import java, util. concurrent. ExecutorService;
+import java. util. concurrent. Executors;
+import org. apache. curator, framework CuratorFramework;
+import org. apache. curator. framework CuratorFrameworkFactory
+import org. apache. curator, frameworkapi. BackgroundCallback;
+a
+import org. apache. curator. framework. api. CuratorEvent;
+import org.apache. curator. retry. ExponentialBa
+import org. apache. zookeeper. CreateMode;
+/使用Curator的异步接口
+public class Create Node_Background_Sample
+static String path "/zk-book";
+static CuratorFramework client CuratorFrameworkFactory.builder()
+connectString ("domain1. book. zookeeper: 2181")
+sessionTimeoutMs(5000
+retryPolicy(new ExponentialBackoffRetry(1000, 3))
+.build();
+static CountDownLatch semaphore new CountDownLatch();
+Eive
+static ExecutorService tp Executors. newFixedThreadPool(2);
+public static void main(String [ args) throws Exception
+client.start();
+System.out. println( "Main thread: " Thread. currentThread().getName());
+∥此处传了自定义的 Executor
+client. create). creatingParentsIfNeeded(). withMode(CreateMode. EPHEMERAL).inBackgr
+ound(new BackgroundCallback(){
+@override
+public void processResult(CuratorFramework client, CuratorEvent event)
+throws Exception
+System.out. println"event code:" event. getResultCode()+",type:"
+event. getType()+"]")
+System.out. println( "Thread of processResult: " Thread. currentThread()
+getName())
+semaphore. countDown()
+},tp). forPath(path,"init".getBytes());
+1/此处没有传人自定义的Executor
+client. create(). creatingParentsIfNeeded(). withModeCreateMode. EPHEMERAL).inBackgr
+ound(new BackgroundCallback(){
+@Override
+4开源客户端143
+
+<==========================154end ==============================>
+<==========================155start==============================>
+
+public void processResult(CuratorFramework client, CuratorEvent event)
+throws Exception
+System.out. println(eventcode:" event. getResultCode()+",type:
+event. getType()+"]")
+System. out. println("Thread of processResult: " Thread. currentThread()
+getName())
+semaphore. countDown();
+). forPath(path,"init.getBytes())
+semaphore.await()
+tp.shutdown()
+运行程序,输出结果如下:
+Main thread:main
+event [code: 0, type: CREATE]
+Thread of processResult: pool-3-thread-1
+event code: -110, type: CREATE]
+Thread of processResult: main-EventThread
+上面这个程序使用了异步接口 inBackground来创建节点,前后两次调用,创建的节
+点名相同。从两次返回的 event中可以看出,第一次返回的响应码是0,表明此次调用
+成功,即创建节点成功;而第二次返回的响应码是-110,表明该节点已经存在,无法重
+复创建。这些响应码和 ZooKeeper原生的响应码是一致的。
+另外,我们再来看看前后两次调用 inBackg round接口时传入的 Executor参数。第
+一次传入了一个 ExecutorService,这样一来, Curator的异步事件处理逻辑就会交
+由该线程池去做。而第二次调用时,没有传入任何 Executor,因此会使用 ZooKeeper
+默认的 Event Thread来处理。
+典型使用场景
+Curator不仅为开发者提供了更为便利的PI接口,而且还提供了一些典型场景的使用
+参考。读者可以从这些使用参考中更好地理解如何使用 ZooKeeper客户端。这些使用参
+考都在 recipes包中,读者需要单独依赖以下 Maven依赖来获取:
+<dependency>
+<groupId>org. apache. curator</groupId>
+<artifactId>curator-recipes</artifactId>
+<version>2.4.2</version>
+</dependency>
+144第5 ZooKeeper章使用
+
+<==========================155end ==============================>
+<==========================156start==============================>
+
+事件监听
+ZooKeeper原生支持通过注册 Watcher来进行事件监听但是其使用并不是特别方便,
+需要开发人员自己反复注册 Watcher,比较繁琐。 Curator引入了 Cache来实现对
+ZooKeeper服务端事件的监听。 CacheCurator是中事件监听的包装,其对事件的监听
+其实可以近似看作是一个本地缓存视图和远程 ZooKeeper视图的对比过程同时 Curator
+能够自动为开发人员处理反复注册监听,从而大大简化了原生API开发的繁琐过程。
+Cache分为两类监听类型:节点监听和子节点监听。
+NodeCache
+NodeCache用于监听指定 ooKeeper数据节点本身的变化,其构造方法有如下两
+个:
+public NodeCache(CuratorFramework client, String path);
+public NodeCache(CuratorFramework client, String path, boolean
+dataIsCompressed);
+NodeCache构造方法参数说明如表5-24所示。
+表5-24. NodeCache构造方法参数说明
+参数名
+说明
+client
+Curator客户端实例
+path
+数据节点的节点路径
+dataIsCompressed
+是否进行数据压缩
+同时, NodeCache定义了事件处理的回调接口 NodeCacheListener
+清单5-34. NodeCacheListener回调接口定义
+public interface NodeCacheListener{
+//Called when a change has occurred
+public voidnodeChanged() throws Exception;
+当数据节点的内容发生变化的时候,就会回调该方法。下面通过一个实际例子来看
+看如何在代码中使用 NodeCache
+清单5-35. NodeCache使用示例
+package book. chapter05. $5_4_2;
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator. framework. CuratorFramew
+import org. apache. curator. framework. recipes. cache. NodeCache;
+import org. apache. curator. framework. recipes. cache. NodeCacheListener;
+import org. apache. curator. retry. ExponentialBackoffRetry;
+5.4开源客户端145
+
+<==========================156end ==============================>
+<==========================157start==============================>
+
+import org. apache. zookeeper. CreateMode;
+public class NodeCache_Sample
+static String path="/zk-book/nodecache";
+static CuratorFramework client CuratorFrameworkFactory. builder()
+connectString("domainl. book, zookeeper: 2181")
+.sessionTimeoutMs(5000)
+retryPolicy(new ExponentialBackoffRetry(1000, 3))
+.build()
+public static void main(String[] args) throws Exception
+client. start()
+client. create()
+creatingParentsIfNeeded()
+.withMode(CreateMode. EPHEMERAL)
+. forPath(path,"init".getBytes());
+final NodeCache cache new NodeCache(client, path, false);
+cache. start(true);
+cache. getListenable). addListener(new NodeCacheListener)
+@Override
+public void nodeChanged) throws Exception
+System.out. println("Node data update, new data:"+
+new String(cache. getCurrentData() .getData()))
+)
+client. setData). forPath(path,"u". getBytes());
+Thread. sleep( 1000 )
+client. delete(). deletingChildrenIfNeeded(). forPath(path);
+Thread. sleep( Integer. MAX_VALUE
+在上面的示例程序中,首先构造了一个 NodeCache实例,然后调用 start方法,
+该方法有个 boolean类型的参数,默认是 false,如果设置为true,那么 NodeCache
+在第一次启动的时候就会立刻从 ZooKeeper上读取对应节点的数据内容,并保存在
+Cache中
+NodeCache不仅可以用于监听数据节点的内容变更,也能监听指定节点是否存在。
+如果原本节点不存在,那么 Cache就会在节点被创建后触发 NodeCacheListener
+但是,如果该数据节点被删除,那么 Curator就无法触发 NodeCacheListener
+了。
+PathChildrenCache
+PathchildrenCache用于监听指定 ZooKeeper数据节点的子节点变化情况。
+146第5 ZooKeeper章使用
+
+<==========================157end ==============================>
+<==========================158start==============================>
+
+PathChildrenCache有如下几个构造方法的定义:
+public PathChildrenCache(CuratorFramework client, String path, boolean cacheData);
+public PathchildrenCache(CuratorFramework client, String path, boolean cacheData,
+ThreadFactorythreadFactory)
+public PathChildrenCache(CuratorFramework client, String path, boolean cacheData,
+boolean datalsCompressed, ThreadFactory threadFactory);
+public PathChildrenCache(CuratorFramework client, String path, boolean cacheData.
+boolean datalsCompressed, final ExecutorService executorService);
+public PathChildrenCache(CuratorFramework client, String path, boolean cacheData.
+boolean datalsCompressed,
+final CloseableExecutorService executorService):
+public PathChildrenCache构造方法参数说明如表5-25所示。
+表5-25. PathChildrenCache构造方法参数说明
+参数名
+说明
+client
+Curator客户端实例
+path
+数据节点的节点路径
+dataIsCompressed
+是否进行数据压缩
+用于配置是否把节点内容缓存起来,如果配置为true,那么客户
+cacheData
+端在接收到节点列表变更的同时,也能够获取到节点的数据内容;
+如果配 false置为,则无法获取到节点的数据内容
+threadFactory
+利用这两个参数,开发者可以通过构造一个专门的线程池,来处
+executorService
+理事件通知
+PathChildrenCache定义了事件处理的回调接口 PathChildrenCacheListener,
+其定义如下。
+清单5-36. PathChildrenCacheListener回调接口定义
+public interface PathChildrenCacheListener{
+public void childEvent(CuratorFramework client, PathChildrenCacheEvent event)
+throws Exception;
+当指定节点的子节点发生变化时,就会回调该方法。 PathChildrenCacheEvent
+类中定义了所有的事件类型,主要包括新增子节点(CHILD_ADDED)、子节点数据
+变更(CHILD_UPDATED)和子节点删除(CHILD_REMOVED)三类
+下面通过一个实际例子来看看如何在代码中使用 PathChildrenCache
+清单5-37. PathChildrenCache使用示例
+package book. chapter05.$5_4_
+import org. apache. curator. framework. CuratorFramework;
+5.4开源客户端147
+
+<==========================158end ==============================>
+<==========================159start==============================>
+
+import org. apache. curator. framework. CuratorFrameworkFactory
+import org. apache. curator. framework. recipes. cache. PathChildrenCache;
+import
+org. apache. curator. framework. recipes. cache .PathChildrenCache,StartMode;
+import org. apache. curator. framework. recipes. cache. PathChildrenCacheEvent;
+import org. apache. curator. framework. recipes. cache. PathChildrenCacheListener;
+import org. apache. curator. retry. ExponentialBackoffRetry;
+import org. apache. zookeeper. CreateMode;
+public class PathChildrenCache_Sample
+static String path "/zk-book";
+static CuratorFramework client =CuratorFrameworkFactory. builder()
+connectString ("domain1. book. zookeeper: 2181")
+. retryPolicy(new ExponentialBackoffRetry(1000,3))
+. sessionTimeoutMs(5000)
+.build():
+public static void main(String[] args) throws Exception
+client.start();
+PathchildrenCache cache new PathChildrenCache(client, path, true);
+cache. start(StartMode. POST_INITIALIZED_EVENT);
+cache. getListenable(). addListener(new PathChildrenCacheListener()
+public void childEvent(CuratorFramework client,
+PathChildrenCacheEvent event)throws
+Exception
+switch (event. getType())
+case CHILD ADDED:
+System.out. println( "CHILD_ADDED, " event. getData().
+getPath());
+break;
+case CHILD_UPDATED:
+System.out. println( "CHILD_UPDATED, "+event. getData().
+getPath());
+break;
+case CHILD REMOVED:
+System.out. println("CHILD_REMOVED, " event. getData().
+getPath());
+break;
+default:
+break;
+}
+);
+client. create() withMode(CreateMode. PERSISTENT). forPath(path);
+Thread. sleep( 1000);
+client. create() withMode(CreateMode. PERSISTENT. forPath(path+"/c1");
+Thread.sleep( 1000 )
+client. delete(). forPath(path+"/c1");
+148第5 ZooKeeper章使用
+
+<==========================159end ==============================>
+<==========================160start==============================>
+
+Thread. sleep( 1000.
+client. delete(). forPath(path);
+Thread. sleep(Integer. MAX_VALUE);
+运行程序,输出结果如下:
+CHILD_ADDED, /zk-book/c1
+CHILD_REMOVED, /zk-book/c1
+在上面这个示例程序中,对/zk-book节点进行了子节点变更事件的监听,一旦该节
+点新增/删除子节点,或者子节点数据发生变更,就会回调 PathChildren
+CacheListener,并根据对应的事件类型进行相关的处理。同时,我们也看到,
+对于节点/zk-book本身的变更,并没有通知到客户端。
+另外,和其他 ZooKeeper客户端产品一样, Curator也无法对二级子节点进行事件
+监听。也就是说,如果使用PathChild renCache对/zk-book进行监听,那么当
+zk-book/c1/c2节点被创建或删除的时候,是无法触发子节点变更事件的。
+Master选举
+在分布式系统中,经常会碰到这样的场景对于一个复杂的任务,仅需要从集群中选举
+出一台进行处理即可。诸如此类的分布式问题,我们统称为“Master选举”借助
+ZooKeeper,我们可以比较方便地实现 Master选举的功能,其大体思路非常简单:
+选择一个根节点,例如master select,多台机器同时向该节点创建一个子节点
+masterselect/lock,利用 ZooKeeper的特性,最终只有一台机器能够创建成功,成
+功的那台机器就作为 Master
+Curator也是基于这个思路,但是它将节点创建、事件监听和自动选举过程进行了封装,
+开发人员只需要调用简单的API即可实现 Master选举下面我们通过一个示例程序来
+看看如何使用 Curator实现 Master选举功能。
+清单5-38.使用 Curator实现分布式 Master选举
+package book. chapter05.$5_4_2;
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator, framework. CuratorFrameworkFactory;
+import org. apache. curator. framework recipes. leader. LeaderSelector;
+import org. apache. curator. framework. recipes. leader. LeaderSelectorListenerAdapter;
+import org. apache. curator. retry. ExponentialE
+public class Recipes_MasterSelect
+5.4开源客户端149
+
+<==========================160end ==============================>
+<==========================161start==============================>
+
+static String master_path "/curator recipes_master_path";
+static CuratorFramework client= CuratorFrameworkFactory. builder()
+connectString("domain1. book. zookeeper: 2181")
+retryPolicy(new ExponentialBackof fRetry(1000, 3)).build()
+public static void main String[args) throws Exception
+client. start();
+LeaderSelector selector new LeaderSelector(client,
+master_path
+new LeaderSelectorListenerAdapter()
+public void takeLeadership(CuratorFramework client) throws
+Exception
+System.out. println("成为Master角色");
+Thread.sleep(3000);
+System.out. println("完成Master操作,释放 Master权利");
+});
+selector. autoRequeue();
+selector.start()
+Thread. sleep( Integer. MAX_VALUE )
+在上面这个示例程序中,可以看到主要是创建了一个 LeaderSelector实例,该实例
+负责封装所有和 Master选举相关的逻辑,包括所有和 ZooKeeper服务器的交互过程。其
+中 master path代表了一个 Master选举的根节点,表明本次 Master选举都是在该节点下
+进行的。
+在创建 LeaderSelector实例的时候还会传入一个监听器: LeaderSelector
+ListenerAdapter.这需要开发人员自行实现, Curator会在成功获取 Master权利的
+时候回调该监听器,其定义如下。
+清单5-39. LeaderSelectorListenerAdapter监听器定义
+public interface LeaderSelectorlistene extends ConnectionStateListener{
+public void takeLeadership( CuratorFramework client) throws Exception;
+public abstract class LeaderSelectorListenerAdapter implements LeaderSelectorListener{
+@Override
+public void stateChanged(CuratorFramewor client, ConnectionState newState){
+if((newState= ConnectionState. SUSPENDED)(newState== ConnectionState.
+LOST)){
+throw new CancelLeadershipException()
+}
+LeaderSelectorListener接口中最主要的方法就是 takeLeadership方法,
+150第5 ZooKeeper章使用
+
+<==========================161end ==============================>
+<==========================162start==============================>
+
+CuratorMaster会在竞争到后自动调用该方法,开发者可以在这个方法中实现自己的业
+务逻辑。需要注意的一点是,一旦执行完 takeLeader方法, Curator就会立即释
+放 Master权利,然后重新开始新一轮的 Master选举。
+在清单5-38所示的示例程序中,通过sle来简单地模拟业务逻辑的执行,同时运行两
+个应用程序后,仔细观察控制台输出,可以发现,当一个应用程序完成 Master逻辑后,
+另一个应用程序的 takeLeadership方法才会被调用。这也就说明,当一个应用实例
+成为 Master后,其他应用实例会进入等待,直到当前Master挂了或退出后才会开始选
+举新的 Master
+同时,读者可以仔细观察下 ZooKeeper上/curatorrecipes master path节点下的子节点,
+可以发现,类似如下的子节点会不断地创建出来:
+c47b6fb-1cc-4f-cc-bffc447-0-000
+c15d7b8f-678b-dc-9bf-8564b8f7-02
+其后缀是一个数字且不断增加。
+分布式锁
+在分布式环境中,为了保证数据的一致性,经常在程序的某个运行点(例如,减库存操
+作或流水号生成等)需要进行同步控制。以一个“流水号生成”的场景为例,普通的后
+台应用通常都是使用时间戳方式来生成流水号,但是在用户量非常大的情况下,可能会
+出现并发问题。下面的示例程序就演示了一个典型的并发问题。
+清单5-40.一个典型时间戳生成的并发问题
+package book. chapter055.$54_2
+import java. text. SimpleDateFormat;
+import java.util. Date;
+import java. util. concurrent. CountDownLatch;
+public class Recipes_NoLock
+public static void main(String[] args) throws Exception
+final CountDownLatch down new CountDownLatch(1);
+for(int= 0; i 10; i++){
+new Thread(new Runnable(){
+public void run(){
+try
+down.await()
+} catch( Exception)
+SimpleDateFormat sdf new SimpleDateFormat("HH: mm: ss |SSS")
+String orderNo sdf. format(new Date());
+5.4开源客户端151
+
+<==========================162end ==============================>
+<==========================163start==============================>
+
+System.err. println("生成的订单号是:"+orderNo)
+}
+}).start();
+}
+down.countDown()
+运行程序,输出结果如下:
+生成的订单号是:21:17:59013
+生成的订单号是:21:17:59013
+生成的订单号是:21:17:59013
+生成的订单号是:21:17:59013
+生成的订单号是:21:17:59013
+生成的订单号是:21:17:59014
+生成的订单号是:21:17:59013
+生成的订单号是:21:17:59014
+生成的订单号是:21:17:59014
+生成的订单号是:21:17:59013
+相信读者不难发现,生成的10个订单号中,有不少是重复的,如果是在实际生产环境
+中,这显然没有满足我们的业务需求。究其原因,就是因为在没有进行同步的情况下,
+出现了并发问题。下面我们来看看如何使用 Curator实现分布式锁功能
+清单5-41.使用 Curator实现分布式锁功能
+package book. chapter05. $5_4_2;
+import java. text. SimpleDateFormat;
+import java.util.Date;
+import java. util. concurrent. CountDownLatch;
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator. framework. CuratorFrameworkFactory
+import org. apache. curator. framework. recipes. locks. InterProcessMutex;
+import org. apache. curator. retry. Exponentia;
+//使用 Curator实现分布式锁功能
+public class Recipes_Lock
+static String lock_path ="/curatorrecipes_lock_path";
+static CuratorFramework client CuratorFrameworkFactory. builder()
+connectString("domainl. book.zookeeper: 2181")
+retryPolicy(new ExponentialBackof(100,3)).build()
+public static void main(String [ args throws Exception
+client.start();
+final InterProcessMutex Lock new InterProcessMute(client, lock_path);
+final CountDownLatch down new CountDownLatch(1);
+for(int= 0; i 30; i++){
+new Thread(new Runnable(){
+152第5 ZooKeeper章使用
+
+<==========================163end ==============================>
+<==========================164start==============================>
+
+public void run(){
+try
+d
+down.await();
+lock. acquire()
+catch Exception e
+8
+SimpleDateFormat sdf new SimpleDateFormat ("HH: mm: ss|SSS");
+String orderNo sdf. format(new Date())
+System.out. println("生成的订单号是:"orderNo)
+try{
+Lock. release();
+catch Exception)
+}
+}).start();
+}
+down.countDown();
+}
+运行程序,输出结果如下:
+生成的订单号是:21:33:39907
+生成的订单号是:21:33:40074
+生成的订单号是:21:33:40|232
+生成的订单号是:21:33:40317
+生成的订单号是:21:33:40550
+生成的订单号是:21:33:40|887
+生成的订单号是:21:33:40982
+生成的订单号是:21:33:41|111
+生成的订单号是:21:33:41135
+生成的订单号是:21:33:41|336
+上面这个示例程序就借助 Curator来实现了一个简单的分布式锁。其核心接口如下:
+public interface InterProcessLock
+public void acquire() throws Exception;
+public void release() throws Exception;
+这两个接口分别用来实现分布式锁的获取与释放过程。
+分布式计数器
+有了上述分布式锁实现的基础之后,我们就很容易基于其实现一个分布式计数器。分布
+式计数器的一个典型场景是统计系统的在线人数。基于 ZooKeeper的分布式计数器的实
+现思路也非常简单:
+5.4开源客户端153
+
+<==========================164end ==============================>
+<==========================165start==============================>
+
+指定一个 ZooKeeper数据节点作为计数器,多个应用实例在分布式锁的控制下,通
+过更新该数据节点的内容来实现计数功能。
+CuratorDistribute同样将这一系列逻辑封装在了类中,从其类名
+我们可以看出这是一个可以在分布式环境中使用的原子整型,其具体使用方式可参考清
+单5-42中的示例程序。
+清单5-42.使用 Curator实现分布式计数器
+package book. chapter05.$5_4_2;
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator. framework. CuratorFrameworkFactory;
+import org. apache. curator. framework recipes. atomic. AtomicValue;
+import org. apache. curator. framework. recipes. atomic. DistributedAtomicInteger;
+import org. apache. curator. retry. ExponentialBa fRetry
+import org. apache. curator. retry. RetryNTimes;
+/使 Curator用实现分布式计数器
+public class Recipes_DistAtomicInt
+static String distatomicint_path "/curator_recipes_distatomicint_path";
+static CuratorFramework client = CuratorFrameworkFactory. builder()
+connectString("domainl. book. zookeeper: 2181")
+retryPolicy(new ExponentialBackoffRetry1000, 3)).build();
+public static void main( String[] args throws Exception
+client. start()
+DistributedAtomicInteger atomicInteger
+new DistributedAtomicInteger( client, distatomicint_path,
+new RetryNTimes(3,1000))
+AtomicValue<Integer>rc= atomicInteger.add(8);
+System.out. println("Result:"+rc. succeeded())
+分布式 Barrier
+Barrier是一种用来控制多线程之间同步的经典方式,在JDK中也自带了 CyclicBarrier实
+现。下面通过模拟一个赛跑比赛来演示 CyclicBarri的用法。
+清单5-43.使用 CyclicBarrier模拟一个赛跑比赛
+package book. chapter05.$5_4_2
+import java. io. IOException;
+import java. util. concurrent. CyclicBarrier;
+import java. util. concurrent. ExecutorService;
+import java. util. concurrent.Executors;
+public class Recipes_CyclicBarrier
+154第5 ZooKeeper章使用
+
+<==========================165end ==============================>
+<==========================166start==============================>
+
+public static CyclicBarrier barrier new CyclicBarrier( 3)
+public static void main( String args) throws IOException, InterruptedException
+{
+ExecutorService executor= Executors. newFixedThreadPool(3)
+executor. submit( new Thread( new Runner("1号选手)))
+executor. submit( new Thread( new Runner("2号选手)));
+executor. submit( new Thread( new Runner("3号选手)))
+executor.shutdown();
+}
+BR
+class Runner implements Runnable
+private String name;
+public Runner( String name )
+this. name name;
+}
+public void run()
+System.out. println(name+"准备好了)
+try
+RecipesCyclicBarrier. barrier. await();
+catch Exception e
+System.out. printlnname起跑!)
+上面就是一个使用JDK自带的 CyclicBarrier实现的赛跑比赛程序,可以看到多线
+程在并发情况下,都会谁确地等待所有线程都处于就绪状态后才开始同时执行其他业务
+逻辑。如果是在同一个jM中的话 Cyc,使用完全可以解决诸如此类的
+多线程同步问题。但是,如果是在分布式环境中又该如何解决呢? Curator中提供的
+DistributedBarrier就是用来实现分布式 Barrier的
+清单5-44使用 Curator实现分布式 Barrier
+package book. chapter05.$5_4_2;
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator. framework CuratorFrameworkFactory;
+import org. apache. curator. framework recipes.barriers. DistributedBarrier;
+import org. apache. curator. retry. ExponentialBackoffRetry;
+//使用Curator实现分布式 Barrier
+public class Recipes_ Barrier
+static String barrier_path "/curatorrecipes_barrier_ path";
+static DistributedBarrier barrier;
+public static void main(String[ args) throws Exception
+new Thread (new Runnable()
+public void run(){
+try
+CuratorFramework client=CuratorFramewo.
+5.4开源客户端155
+
+<==========================166end ==============================>
+<==========================167start==============================>
+
+builder()
+connectString ("domain1. book. zookeeper: 2181")
+retryPolicy(new ExponentialBackof fRetry(1000, 3)).
+build();
+client.start();
+barrier new DistributedBarrier(client, barrier_path);
+System.out. println(Thread. currentThread().getName()+
+号barrier设置");
+barrier. setBarrier();
+barrier. waitOnBarrier();
+System.err. println("启动")
+} catch(Exception)
+}).start()
+Thread. sleep( 2000 )
+barrier. removeBarrier();
+}
+}
+运行程序,输出结果如下:
+Thread-barrier-1号设置
+Thread-2号 barrier设置
+Thread-barrier-号设置
+Thread-barrier-4号设置
+Thread-barrier-3号设置
+启动
+启动
+启动
+启动
+启动
+在上面这个实例程序中,我们模拟了5个线程,通过调用DistributedBarrier
+setBarrier()方法来完成 Barrier的设置,并通过调用 DistributedBarrier.
+waitonBarrier()方法来等待Barrier的释放。然后在主线程中,通过调用
+DistributedBarrier. removeBarrier()方法来释放Barrier,同时触发所有等待
+该 Barrier的5个线程同时进行各自的业务逻辑。
+和上面这种由主线程来触发 Barrier释放不同的是, Curator还提供了另一种线程自发触
+发 Barrier释放的模式,使用方式见清单5-45
+清单5-45.使用 Curator实现另一种分布式 Barrier
+package book. chapter05.$5_4_2;
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator. framework CuratorFrameworkFactory;
+import org. apache. curator. framework. recipes. barriers. DistributedDoubleBarrier;
+156第5章 ZooKeeper使用
+
+<==========================167end ==============================>
+<==========================168start==============================>
+
+import org. apache. curator. retry ExponentialBackoffRetry;
+public class Recipes_Barrier2
+static String barrier_ path="/curator_recipes_barrier_path"
+public static void main(String args) throws Exceptic
+new Thread(new Runnable(){
+public void run()
+try
+CuratorFramework client = CuratorFrameworkFactory.
+builder()
+connectString ("domain1. book. zookeeper: 2181)
+retryPolicy(new ExponentialBackoffRetry(1000, 3)).
+build();
+client.start()
+DistributedDoubleBarrier barrier new Distributed Double
+Barrier(client, barrier_path,5);
+Thread. sleepmath. roundMath. random()*3000))
+System.out. println(Thread. currentThread(). getName()+
+"号进入barrier");
+barrier.enter();
+System.out. println("启动)
+Thread. sleep( Math. round(Math. random()* 3000))
+barrier.leave();
+System.out. println("退出")
+catch (Exception e)
+}).start();
+运行程序,输出结果如下:
+Thread-barrier-4号进入
+Thread--2号进入 barrier
+Thread-0号进入 barrier
+Threadbarrier-3号进入
+Threadbarrier-1号进入
+启动
+启动
+启动
+启动
+启动
+退出
+退出
+退出
+退出
+退出
+5.4开源客户端157
+
+<==========================168end ==============================>
+<==========================169start==============================>
+
+上面这个示例程序就是一个和JDK自带的 CyclicBarri非常类似的实现了,它们
+都指定了进入 Barrier的成员数阈值,例如上面示例程序中的“5”。每个 Barrier的参与
+者都会在调用 DistributedDoubleBarrier enter()方法之后进行等待,此时处
+于准备进入状态。一旦准备进入 Barrier的成员数达到5个后,所有的成员会被同时触
+发进入。之后调用 DistributedDoubleBarrier. leave()方法则会再次等待,此
+时处于准备退出状态。一旦准备退出 Barrier的成员数达到5个后,所有的成员同样会
+被同时触发退出。因此,使用Curator的 Distribut能够很好地
+实现一个分布式 Barrier,并控制其同时进入和退出。
+工具
+Curator也提供了很多工具类,其中用得最多的就是 ZKPaths和 EnsurePath
+ZKPaths
+ZKPaths提供了一些简单的APl来构建ZNde路径、递归创建和删除节点等,其使用
+方式非常简单,读者可以通过运行清单5-46中的示例程序来了解如何使用 ZKPaths
+清单5-46.工具类 ZKPaths使用示例
+package book. chapter05.$5_4_2;
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator. framework. CuratorFrameworkFactory:
+import org. apache. curator. retry. ExponentialBa
+port
+import org. apache. curator. utils. ZKPaths;
+import org. apache. curator. utils ZKPaths. PathAndNode;
+import org. apache. zookeeper. ZooKeeper;
+public class ZKPaths_Sample
+static String path="/curatorzkpath_sample";
+static CuratorFramework client CuratorFrameworkFactory. builder()
+connectString ("domain1.book. zookeeper: 2181")
+. sessionTimeoutMs(5000)
+retryPolicy( new ExponentialBackoffRetry(1000,3))
+.build();
+public static void main(String[] args) throws Exception
+client.start();
+ZooKeeper zookeeper client. getZookeeperclient() .get ZooKeeper();
+System.out. println(ZKPaths. fixForNamespac(path,"sub"));
+System.out. println(ZKPaths. makePathpath,"sub"));
+System.out. println( ZKPaths. getNodeFromPath( "/curator_zkpath sample/sub1")
+158第5 ZooKeeper章使用
+
+<==========================169end ==============================>
+<==========================170start==============================>
+
+);
+PathAndNode pn ZKPaths. getPathAndNode( "/curator_zkpath_sample/subl");
+System.out.println(pn. getPath());
+System.out. println(pn. getNode());
+String dirl path +"/childl";
+String dir2 path +"/child2";
+ZKPaths. mkdirs(zookeeper, dirl);
+ZKPaths. mkdirs(zookeeper, dir2);
+System.out. println(ZKPaths. getSortedchildr zookeeper,path)
+ZKPaths. deletechildrenclient. getZookeepercli(). get ZooKeeper(),path,
+true);
+}
+EnsurePath
+EnsurePath提供了一种能够确保数据节点存在的机制,多用于这样的业务场景中:
+上层业务希望对一个数据节点进行一些操作,但是操作之前需要确保该节点存在。
+基于 ZooKeeper提供的原始API接口,为解决上述场景的问题,开发人员需要首先对该
+节点进行一个判断,如果该节点不存在,那么就需要创建节点。而与此同时,在分布式
+环境中,在A机器试图进行节点创建的过程中,由于并发操作的存在,另一台机器,如
+B机器,也在同时创建这个节点,于是A机器创建的时候,可能会抛出诸如“节点已经
+存在”的异常。因此开发人员还必须对这些异常进行单独的处理,逻辑通常非常琐碎。
+EnsurePath正好可以用来解决这些烦人的问题,它采取了静默的节点创建方式,其内
+部实现就是试图创建指定节点,如果节点已经存在,那么就不进行任何操作,也不对外
+抛出异常,否则正常创建数据节点。关于 EnsurePath的具体用法,可以参考清单5-47
+中的示例程序。
+清单5-47.工具类 EnsurePath使用示例
+package book. chapter05. $5_4_2;
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator. framework. CuratorFrameworkFactory;
+import org. apache. curator. retry. ExponentialBackoffRetry;
+import org. apache. curator. utils. EnsurePath;
+public class EnsurePathDemo
+static String path "/zk-book/";
+static CuratorFramework client CuratorFrameworkFactory. builder()
+5.4开源客户端159
+
+<==========================170end ==============================>
+<==========================171start==============================>
+
+connectString ("domain1. book. zookeeper: 2181")
+.sessionTimeoutMs(5000)
+retryPolicy(new ExponentialBackoffRetry(1000, 3))
+.build()
+public static void mainString args) throws Exception
+client.start()
+client. usingNamespace( "zk-book");
+EnsurePathensurePath new EnsurePath(path);
+ensurePath. ensure(client. getZookeeperClient())
+ensurePath. ensure(client. getZookeeperclient());
+EnsurePath ensurePath22= client. newNamespaceAwa("/c")
+ensurePath22.ensure(client. getZookeeperClient());
+}
+}
+TestingServer
+为了便于开发人员进行 ZooKeeper的开发与测试, Curator提供了一种启动简易 ZooKeeper服
+务的方法 TestingServer TestingServer允许开发人员非常方便地启动一个标准
+的 ZooKeeper服务器,并以此来进行一系列的单元测试。 TestingServer在 Curator的
+test包中,读者需要单独依赖以下 Maven依赖来获取:
+<dependency>
+<groupId>org. apache. curator</groupId>
+<artifactId>curator-test</artifactId>
+<version>2.4.2</version>
+</dependency>
+清单5-48中的示例程序演示了 TestingServer的基本使用方法
+清单5-48.工具类 TestingServer使用示例
+package book. chapter05.$5_4_2;
+import java. io. File;
+import org. apache. curator. framework. CuratorFramework;
+import org. apache. curator, framework. CuratorFrameworkFactory;
+import org. apache. curator. retry ExponentialBackoffRetry;
+import org. apache. curator. test. TestingServer;
+public class TestingServer_Sample
+static String path="/zookeeper";
+public static void main(String[] args) throws Exception
+TestingServer server= new TestingServer(28l, new File"/home/ admin/zk
+book-data"))
+CuratorFramework client=CuratorFrame. builder(
+160第5 ZooKeeper章使用
+
+<==========================171end ==============================>
+<==========================172start==============================>
+
+connectString (server.getConnectstring ()
+sessionTimeoutMs(5000)
+retryPolicy(new ExponentialBackoffRetry(1000, 3))
+.build();
+client.start();
+System.out. printIn( client. getChildren(). forPath( path ))
+server. close();
+TestingServer允许开发人员自定义 ZooKeeper服务器对外服务的端口和
+路径。如果没有指定 dataDir,那么 Curator默认会在系统的临时目录 java io. tmpdir
+中创建一个临时目录来作为数据存储目录。
+Testingcluster
+上文中提到,开发人员可以利用 TestingServer来非常方便地在单元测试中启动一个
+ZooKeeper服务器,同样, Curator也提供了启动 ZooKeeper集群的工具类
+Testingcluster是一个可以模拟 ZooKeeper集群环境的 Curator工具类,能够便于开
+发人员在本地模拟由n台机器组成的集群环境。下面我们将通过模拟一个由3台机器组
+成的 ZooKeeper集群的场景来了解 TestingClust工具类的使用。
+清单5-49.工具类 Testingcluster使用示例
+package book. chapter05.$5_4_2;
+import org. apache. curator. test. TestingCluster;
+import org. apache. curator. test. TestingZooKeeperServer;
+public class TestingCluster_ Sample
+public static void main(String [ args) throws Exception
+TestingCluster cluster new TestingCluster(3);
+cluster.start();
+Thread. sleep(2000);
+TestingZooKeeperServer leader null;
+for(TestingZooKeeperServer zs: cluster.getServers()){
+System.out. printzs. getInstanceSpec(). getServerId)+"-")
+System.out. printzs. getQuorumPeer(). getServerState()+"-");
+System.out. printlnzs. getInstanceSpec(). getDataDirectory(). getAbsolutePath()
+)
+if(zs. getQuorumPeer. getServerState(). equals("leading")
+leader zs;
+}
+leader.kill();
+5.4开源客户端161
+
+<==========================172end ==============================>
+<==========================173start==============================>
+
+System.out. println( "--After leader kill: ")
+for(TestingZooKeeperServer zs: cluster getServers()){
+System.out. print(zs.getInstanceSpec(). getServerId()+"-");
+System. out. print(zs. getQuorumPeer) getServerState()+"-");
+System.out. printlnzs. getInstanceSpec). getDataDirectory().getAbsolutePath()
+)
+cluster.stop();
+}
+运行程序,输出结果如下:
+1-following-C: \Users\nileader\AppData\Local\Temp\1404044185801-0
+2-following-C: \Users\nileader\AppData\Local\Temp\1404044185814-0
+3-leading-C: \Users\ nileader\AppData\Local\ Temp\1404044185823-0
+--After leader kill:
+1-leaderelection-C: \Users\nileader\ AppData\Local\Temp\1404044185801-0
+2-leaderelection-C: \Users\nileaderAppData\Local\Temp\1404044185814-0
+3-leaderelection-C: \Users\nileader\AppData\ Local\ Temp\1404044185823-0
+在上面这个示例程序中,我们模拟了一个由3台机器组成的 ZooKeeper集群,同时在运
+行期间,将Leader服务器Kill掉。从程序运行的输出结果中可以看到,在 Leader服务
+器被Kill后,其他两台机器重新进行了 Leader选举。
+小结
+本章主要围绕 ZooKeeper服务的使用展开,对 ZooKeeper的基本使用方式进行了全面的
+讲解。首先,分别从集群、单机和伪集群三种模式向读者介绍了如何部署与运行一个可
+用的 ZooKeeper服务,同时介绍了在 ZooKeeper服务部署与运行过程中的系统环境配置
+以及对于常见异常问题的解决。接下来主要围绕 ZooKeeper自带的客户端脚本,就
+ZooKeeper服务的基本使用方式向读者进行了介绍。最后,通过对 ZooKeeper提供的Java
+API接口以及开源客户端 ZkClient和 Curator的分别讲解以及源代码示例的演示,帮助
+读者更好地在Java应用程序中使用 ZooKeeper服务。
+162第5 ZooKeeper章使用
+
+<==========================173end ==============================>
+<==========================174start==============================>
+
+第6章
+ZooKeeper的典型应用场景
+在第5章中,我们已经向读者讲解了如何通过 ZooKeeper的客户端来使用 ZooKeeper
+从本章开始,我们将从实际的分布式应用场景出发,来讲解如何使用 ZooKeeper去解决
+些常见的分布式问题,以帮助读者更好地使用 ZooKeeper
+ZooKeeper是一个典型的发布/订阅模式的分布式数据管理与协调框架,开发人员可以使
+用它来进行分布式数据的发布与订阅。另一方面,通过对 ZooKeeper中丰富的数据节点
+类型进行交叉使用,配合 Watcher事件通知机制,可以非常方便地构建一系列分布式应
+用中都会涉及的核心功能,如数据发布/订阅、负载均衡、命名服务、分布式协调通知、
+集群管理、 Master选举、分布式锁和分布式队列等。在6.1节中,我们将逐一针对这些
+典型的分布式应用场景来做详细讲解。
+当然,仅仅从理论上学习 ZooKeeper的应用场景还远远不够。在6.2节中,我们还将结
+合 Hadoop、 HBase和 Kafka等广泛使用的开源系统,来讲解 ZooKeeper在大型分布式系
+统中的实际应用。在6.3节中,会进一步通过对Metamorphosis Dubbo和 Canal等知名
+案例的讲解,来向读者展现阿里巴巴集团的这些典型技术产品是如何借助 ZooKeeper解
+决实际生产中的分布式问题的。
+6.1典型应用场景及实现
+ZooKeeper是一个高可用的分布式数据管理与协调框架。基于对ZAB算法的实现,该框
+架能够很好地保证分布式环境中数据的一致性。也正是基于这样的特性,使得 ZooKeeper
+成为了解决分布式一致性问题的利器。
+注1:本节中讲解的所有应用场景,均是作者所在公司真实项目在生产环境中对 ZooKeeper实际应用
+的抽象描述。
+163
+
+<==========================174end ==============================>
+<==========================175start==============================>
+
+随着近年来互联网系统规模的不断扩大,大数据时代飞速到来,越来越多的分布式系统
+将 ZooKeeper作为核心组件使用,如 Hadoop、 HBase和 Kafka等,因此,正确理解
+ZooKeeper的应用场景,对于 ZooKeeper的使用者来说,显得尤为重要本节将重点围
+绕数据发布/订阅、负载均衡、命名服务、分布式协调通知、集群管理、 Master选举
+分布式锁和分布式队列等方面来讲解 ZooKeeper的典型应用场景及实现
+6.1.1数据发布/订阅
+数据发布/订阅(Publish/Subscribe)系统,即所谓的配置中心,顾名思义就是发布者将数据
+发布到 ZooKeeper的一个或一系列节点上供订阅者进行数据订阅,进而达到动态获取
+数据的目的,实现配置信息的集中式管理和数据的动态更新。
+发布/订阅系统一般有两种设计模式,分别是推(Push)模式和拉(pull)模式。在推模
+式中,服务端主动将数据更新发送给所有订阅的客户端;而拉模式则是由客户端主动发
+起请求来获取最新数据,通常客户端都采用定时进行轮询拉取的方式。关于这两种模式
+更详细的讲解以及各自的优缺点,这里就不再赘述,读者可以自行到互联网上搜索相关
+的资料作进一步的了解。 ZooKeeper采用的是推拉相结合的方式:客户端向服务端注册
+自己需要关注的节点,一旦该节点的数据发生变更,那么服务端就会向相应的客户端发
+送 Watcher事件通知,客户端接收到这个消息通知之后,需要主动到服务端获取最新的
+数据。
+如果将配置信息存放到 ZooKeeper上进行集中管理,那么通常情况下,应用在启动的时
+候都会主动到 ZooKeeper服务端上进行一次配置信息的获取,同时,在指定节点上注册
+一个 Watcher监听,这样一来,但凡配置信息发生变更,服务端都会实时通知到所有订
+阅的客户端,从而达到实时获取最新配置信息的目的。下面我们通过一个“配置管理”
+的实际案例来展示 ZooKeeper在“数据发布订阅”场景下的使用方式。
+在我们平常的应用系统开发中,经常会碰到这样的需求:系统中需要使用一些通用的配
+置信息,例如机器列表信息、运行时的开关配置、数据库配置信息等。这些全局配置信
+息通常具备以下3个特性。
+数据量通常比较小。
+数据内容在运行时会发生动态变化。
+集群中各机器共享,配置一致。
+对于这类配置信息,一般的做法通常可以选择将其存储在本地配置文件或是内存变量中。
+164第6章 ZooKeeper的典型应用场景
+
+<==========================175end ==============================>
+<==========================176start==============================>
+
+无论采用哪种方式,其实都可以简单地实现配置管理。如果采用本地配置文件的方式,
+那么通常系统可以在应用启动的时候读取到本地磁盘的一个文件来进行初始化,并且在
+运行过程中定时地进行文件的读取,以此来检测文件内容的变更。在系统的实际运行过
+程中,如果我们需要对这些配置信息进行更新,那么只要在相应的配置文件中进行修改,
+等到系统再次读取这些配置文件的时候,就可以读取到最新的配置信息,并更新到系统
+中去,这样就可以实现系统配置信息的更新另外一种借助内存变量来实现配置管理的
+方式也非常简单,以Java系统为例,通常可以采用JMX方式来实现对系统运行时内存
+变量的更新。
+从上面的介绍中,我们基本了解了如何使用本地配置文件和内存变量方式来实现配置管
+理。通常在集群机器规模不大、配置变更不是特别频繁的情况下,无论上面提到的哪种
+方式,都能够非常方便地解决配置管理的问题。但是,一旦机器规模变大,且配置信息
+变更越来越频繁后,我们发现依靠现有的这两种方式解决配置管理就变得越来越困难了。
+我们既希望能够快速地做到全局配置信息的变更,同时希望变更成本足够小,因此我们
+必须寻求一种更为分布式化的解决方案。
+接下去我们就以一个“数据库切换”的应用场景展开,看看如何使用 ZooKeeper来实现
+配置管理。
+配置存储
+在进行配置管理之前,首先我们需要将初始化配置存储到 ZooKeeper上去。一般情
+况下,我们可以在 ZooKeeper上选取一个数据节点用于配置的存储,例如
+Jappldatabaseconfig(以下简称“配置节点”),如图6-1所示。
+app
+database config
+图6-1.配置管理的 ZooKeeper节点示意图
+我们将需要集中管理的配置信息写入到该数据节点中去,例如:
+清单6-1.数据库配置
+#DBCP
+dbcp. driverClas sName=com. mysql. jdbc.Driver
+dbcp. dbJDBCUrl=jdbc: mysql://1.1.1.1:3306/taokeeper
+dbcp.characterEncoding=GBK
+dbcp. username=xiaoming
+6.1典型应用场景及实现注165
+
+<==========================176end ==============================>
+<==========================177start==============================>
+
+dbcp. password=123456
+dbcp.maxActive=30
+dbcp.maxIdle=10
+dbcp.maxWait=10000
+配置获取
+集群中每台机器在启动初始化阶段,首先会从上面提到的 ZooKeeper配置节点上读
+取数据库信息,同时,客户端还需要在该配置节点上注册一个数据变更的 Watcher
+监听,一旦发生节点数据变更,所有订阅的客户端都能够获取到数据变更通知。
+配置变更
+在系统运行过程中,可能会出现需要进行数据库切换的情况,这个时候就需要进行
+配置变更借助 ZooKeeper,我们只需要对 ZooKeeper上配置节点的内容进行更新,
+ZooKeeper就能够帮我们将数据变更的通知发送到各个客户端,每个客户端在接收
+到这个变更通知后,就可以重新进行最新数据的获取。
+6.1.2负载均衡
+根据维基百科上的定义,负载均衡( Load Balance)是一种相当常见的计算机网络技术,
+用来对多个计算机(计算机集群)、网络连接、CPU、磁盘驱动器或其他资源进行分配
+负载,以达到优化资源使用、最大化吞吐率、最小化响应时间和避免过载的目的。通常
+负载均衡可以分为硬件和软件负载均衡两类,本节主要探讨的是 ZooKeeper在“软”负
+载均衡中的应用场景。
+在分布式系统中,负载均衡更是一种普遍的技术,基本上每一个分布式系统都需要使用
+负载均衡。在本书第1章讲解分布式系统特征的时候,我们提到,分布式系统具有对等
+性,为了保证系统的高可用性,通常采用副本的方式来对数据和服务进行部署。而对于
+消费者而言,则需要在这些对等的服务提供方中选择一个来执行相关的业务逻辑,其中
+比较典型的就是DNS服务。在本节中,我们将详细介绍如何使用 ZooKeeper来解决负
+载均衡问题。
+一种动态的DNS服务
+DNS是域名系统(Domain Name System)的缩写,是因特网中使用最广泛的核心技术之
+DNS系统可以看作是一个超大规模的分布式映射表,用于将域名和地址进行一
+一映射,进而方便人们通过域名来访问互联网站点。
+通常情况下,我们可以向域名注册服务商申请域名注册,但是这种方式最大的缺陷在于
+166第6章 ZooKeeper的典型应用场景
+
+<==========================177end ==============================>
+<==========================178start==============================>
+
+只能注册有限的域名:
+日常开发过程中,经常会碰到这样的情况,在一个 Companyl公司内部,需要
+给一个App1应用的服务器集群机器配置一个域名解析。相信有过一线开发经
+验的读者一定知道,这个时候通常会需要有类似于appl. appl.company 1. com.com的一个
+域名,其对应的就是一个服务器地址。如果系统数量不多,那么通过这种传统
+的DNS配置方式还可以应付,但是,一旦公司规模变大,各类应用层出不穷,
+那么就很难再通过这种方式来进行统一的管理了。
+因此,在实际开发中,往往使用本地HOST绑定来实现域名解析的工作。具体如何进行
+本地HOST绑定,因为不是本书的重点,并且互联网上有大量的资料,因此这里不再赘
+述。使用本地HOST绑定的方法,可以很容易解决域名紧张的问题,基本上每一个系统
+都可以自行确定系统的域名与目标IP地址。同时,这种方法对于开发人员最大的好处
+就是可以随时修改域名与IP的映射,大大提高了开发调试效率。然而,这种看上去完
+美的方案,也有其致命的缺陷:
+当应用的机器规模在一定范围内,并且域名的变更不是特别频繁时,本地
+HOST绑定是非常高效且简单的方式。然而一旦机器规模变大后,就常常会碰
+到这样的情况:我们在应用上线的时候,需要在应用的每台机器上去绑定域名,
+但是在机器规模相当庞大的情况下,这种做法就相当不方便。另外,如果想要
+临时更新域名,还需要到每个机器上去逐个进行变更,要消耗大量时间,因此
+完全无法保证实时性。
+现在,我们来介绍一种基于 ZooKeeper实现的动态DNS方案(以下简称该方案为
+DDNS”, Dynamic DNS)
+域名配置
+和配置管理一样,我们首先需要在 ZooKeeper上创建一个节点来进行域名配置,例如
+DN/appl/server appl. company.com(以简称“域名节点”),如图6-2所示。
+server appt company1 com
+app2
+图6-2.Ds的 ZooKeeper节点示意图
+6.1典型应用场景及实现注167
+
+<==========================178end ==============================>
+<==========================179start==============================>
+
+从图6-2中我们看到,每个应用都可以创建一个属于自己的数据节点作为域名配置的根
+节点,例如DDNSappl,在这个节点上,每个应用都可以将自己的域名配置上去,清
+单6-2是一个配置示例。
+清单6-2.IP地址和端口配置
+#单个IP:PORT
+192.168.0.1:8080
+#多个IP:PORT
+192.168.0.1:8080,192.168.0.2:8080
+域名解析
+在传统的DNS解析中,我们都不需要关心域名的解析过程,所有这些工作都交给了操
+作系统的域名和IP地址映射机制(本地HOST绑定)或是专门的域名解析服务器(由
+域名注册服务商提供)。因此,在这点上,DDNS方案和传统的域名解析有很大的区别在
+DDNS中,域名的解析过程都是由每一个应用自己负责的。通常应用都会首先从域名节
+点中获取一份IP地址和端口的配置,进行自行解析。同时,每个应用还会在域名节点
+上注册一个数据变更 Watcher监听,以便及时收到域名变更的通知。
+域名变更
+在运行过程中,难免会碰上域名对应的IP地址或是端口变更,这个时候就需要进行域
+名变更操作。在DDNS中,我们只需要对指定的域名节点进行更新操作, ZooKeeper就
+会向订阅的客户端发送这个事件通知,应用在接收到这个事件通知后,就会再次进行域
+名配置的获取。
+上面我们介绍了如何使用 ZooKeeper来实现一种动态的DNS系统。通过 ZooKeeper来
+实现动态DNS服务,一方面,可以避免域名数量无限增长带来的集中式维护的成本;
+另一方面,在域名变更的情况下,也能够避免因逐台机器更新本地HOST而带来的繁琐
+工作。
+自动化的DNS服务
+根据上面的讲解,相信读者基本上已经能够使用 ZooKeeper来实现一个动态的dns服
+务了。但是我们仔细看一下上面的实现就会发现,在域名变更环节中,当域名对应的P
+地址发生变更的时候,我们还是需要人为地介入去修改域名节点上的IP地址和端口。
+接下来我们看看下面这种使用 ZooKeeper实现的更为自动化的DNS服务自动化的DNS
+服务系统主要是为了实现服务的自动化定位,整个系统架构如图6-3所示。
+168第6章 ZooKeeper的典型应用场景
+
+<==========================179end ==============================>
+<==========================180start==============================>
+
+动态DNS(Dynamic DNS)系统架构
+ZooKeepr Cluster
+Register Dispatcher
+honitor contaolter...
+Chuater Cluster
+注册名
+域名解析域名检测
+SDK(Open API)
+服务提
+服务消
+供者
+费者
+图6-3.动态DNS系统架构
+首先来介绍整个动态DNS系统的架构体系中几个比较重要的组件及其职责。
+Register集群负责域名的动态注册。
+Dispatcher集群负责域名解析。
+Scanner集群负责检测以及维护服务状态(探测服务的可用性、屏蔽异常服务节点
+等)。
+SDK提供各种语言的系统接入协议,提供服务注册以及查询接口。
+Monitor负责收集服务信息以及对DDNS自身状态的监控。
+Controller是一个后台管理的 Console,负责授权管理、流量控制、静态配置服务
+和手动屏蔽服务等功能,另外,系统的运维人员也可以在上面管理 Register
+Dispatcher和 Scanner等集群。
+整个系统的核心当然是 ZooKeeper集群,负责数据的存储以及一系列分布式协调。下面
+我们再来详细地看下整个系统是如何运行的。在这个架构模型中,我们将那些目标P
+地址和端口抽象为服务的提供者,而那些需要使用域名解析的客户端则被抽象成服务的
+消费者。
+域名注册
+域名注册主要是针对服务提供者来说的。域名注册过程可以简单地概括为:每个服务提
+供者在启动的过程中,都会把自己的域名信息注册到 Register集群中去
+1.服务提供者通过SDK提供的API接口,将域名、IP地址和端 Register口发送给
+6.1典型应用场景及实现注169
+
+<==========================180end ==============================>
+<==========================181start==============================>
+
+集群。例如,A机器用于提供 serviceA.xx.c,于是它就向 Register发送一个“域
+名→P:poT”的映射:“ ip: PORT" :"serviceA.xxx.com -192.168.0.1:8080"..xxx.com→192.168.0.1:8080
+2. Register获取到域名、IP地址和端口配置后,根据域名将信息写入相对应的
+ZooKeeper域名节点中。
+域名解析
+域名解析是针对服务消费者来说的,正好和域名注册过程相反:服务消费者在使用域名
+的时候,会向 Dispatcher发出域名解析请求。 Dispatcher收到请求后,会从 ZooKeeper
+上的指定域名节点读取相应的IP:PORT列表,通过一定的策略选取其中一个返回给前端
+应用。
+域名探测
+域名探测是指DDNS系统需要对域名下所有注册的IP地址和端口的可用性进行检测,
+俗称“健康度检测”。健康度检测一般有两种方式,第一种是服务端主动发起健康度心
+跳检测,这种方式一般需要在服务端和客户端之间建立起一个TCP长链接;第二种则
+是客户端主动向服务端发起健康度心跳检测。在DDNS架构中的域名探测,使用的是服
+务提供者主动向 Scanner进行状态汇报(第二种健康度检测方式)的模式,即每个服
+务提供者都会定时向 Scanner汇报自己的状态。
+Scanner会负责记录每个服务提供者最近一次的状态汇报时间,一旦超过5秒没有收到
+状态汇报,那么就认为该P地址和端口已经不可用,于是开始进行域名清理过程。在
+域名清理过程中, Scanner会在 ZooKeeper中找到该域名对应的域名节点,然后将该P
+地址和端口配置从节点内容中移除。
+以上就是整个DDNS系统中几个核心的工作流程,关于DDNS系统自身的监控与运维,
+和 ZooKeeper关系不是特别大,这里就不再展开讲解了。
+6.1.3命名服务
+命名服务((NameService《Java)也是分布式系统中比较常见的一类场景,在《ava网络高级
+编程》一书中提到,命名服务是分布式系统最基本的公共服务之一。在分布式系统中,
+被命名的实体通常可以是集群中的机器提供的服务地址或远程对象等这些我们都
+可以统称它们为名字(Name),其中较为常见的就是一些分布式服务框架(如RPC、RMI)
+中的服务地址列表,通过使用命名服务,客户端应用能够根据指定名字来获取资源的实
+体、服务地址和提供者的信息等。
+170第6章 ZooKeeper的典型应用场景
+
+<==========================181end ==============================>
+<==========================182start==============================>
+
+Java语言中的JNDI便是一种典型的命名服务。JNDI是Java命名与目录接口(java
+Naming and Directory Interface)的缩写,是2E体系中重要的规范之一,标准的J2E
+容器都提供了对JNDI规范的实现。因此,在实际开发中,开发人员常常使用应用服务
+器自带的JNDI实现来完成数据源的配置与管理使用JND方式后,开发人员可以完
+全不需要关心与数据库相关的任何信息,包括数据库类型、DBC驱动类型以及数据库
+账户等。
+ZooKeeper提供的命名服务功能与JNDI技术有相似的地方,都能够帮助应用系统通过
+一个资源引用的方式来实现对资源的定位与使用。另外,广义上命名服务的资源定位都
+不是真正意义的实体资源—在分布式环境中,上层应用仅仅需要一个全局唯一的名字,
+类似于数据库中的唯一主键。下面我们来看看如何使用 ZooKeeper来实现一套分布式全
+局唯一ID的分配机制。
+所谓ID,就是一个能够唯一标识某个对象的标识符。在我们熟悉的关系型数据库中,各
+个表都需要一个主键来唯一标识每条数据库记录,这个主键就是这样的唯一D。在过去
+的单库单表型系统中,通常可以使用数据库字段自带的 autoincrement属性来自动为每
+条数据库记录生成一个唯一的ID,数据库会保证生成的这个D在全局唯一。但是随着
+数据库数据规模的不断增大,分库分表随之出现,而 autoincrement属性仅能针对单一
+表中的记录自动生成ID,因此在这种情况下,就无法再依靠数据库的 autoincrement属
+性来唯一标识一条记录了。于是,我们必须寻求一种能够在分布式环境下生成全局唯一
+ID的方法。
+一说起全局唯一ID,相信读者都会联想到UUD.没错,UUID是通用唯一识别码
+(Universally Unique Identifier)的简称,是一种在分布式系统中广泛使用的用于唯一标
+识元素的标准,最典型的实现是GUD(Globally Unique Identifier,全局唯一标识符),
+主流ORM框架 Hibernate有对UUID的直接支持。
+确实,UUID是一个非常不错的全局唯一生成方式,能够非常简便地保证分布式环境
+中的唯一性。一个标准的UUID是一个包含32位字符和4个短线的字符串,例如
+e70f35-f260-46ff-a32d-53a086c57ade7 UUID的优势自然不必多说,我们重点来看看
+它的缺陷。
+长度过长
+UUID最大的问题就在于生成的字符串过长。显然,和数据库中的INT类型相比,
+存储一个UUID需要花费更多的空间。
+6.1典型应用场景及实现注171
+
+<==========================182end ==============================>
+<==========================183start==============================>
+
+含义不明
+上面我们已经看到一个典型的UUID是类似于“e70f357-f60-46ff-a32d
+53a086c57ade”的一个字符串。根据这个字符串,开发人员从字面上基本看不出任
+何其表达的含义,这将会大大影响问题排查和开发调试的效率。
+接下来,我们结合一个分布式任务调度系统来看看如何使用 ZooKeeper来实现类全局
+唯一ID的生成
+在5.3.2节中,我们已经提到,通过调用 ZooKeeper节点创建的AP接口可以创建一个
+顺序节点,并且在API返回值中会返回这个节点的完整名字。利用这个特性,我们就可
+以借助 ZooKeeper来生成全局唯一的ID了,如图6-4所示。
+图6-4.全局唯一D生成的 ZooKeeper节点示意图
+结合图6-4,我们来讲解对于一个任务列表的主键,使用 ZooKeeper生成唯一i的基本
+步骤。
+1.所有客户端都会根据自己的任务类型,在指定类型的任务下面通过调用
+create()接口来创建一个顺序节点,例如创建“job-”节点。
+2.节点创建完毕后, create()接口会返回一个完整的节点名,例如“0000003
+3.客户端拿到这个返回值后,拼接上type类型,例如“type2-b0000,这
+就可以作为一个全局唯一的ID了。
+172第6章 ZooKeeper的典型应用场景
+
+<==========================183end ==============================>
+<==========================184start==============================>
+
+在 ZooKeeper中,每一个数据节点都能够维护一份子节点的顺序顺列,当客户端对其创
+建一个顺序子节点的时候 ZooKeeper会自动以后缀的形式在其子节点上添加一个序号,
+在这个场景中就是利用了 ZooKeeper的这个特性关于 ZooKeeper的顺序节点,将在7.1.2
+节中做详细讲解。
+6.1.4分布式协调/通知
+分布式协调/通知服务是分布式系统中不可缺少的一个环节,是将不同的分布式组件有机
+结合起来的关键所在。对于一个在多台机器上部署运行的应用而言,通常需要一个协调
+者(Coordinator)来控制整个系统的运行流程,例如分布式事务的处理、机器间的互相
+协调等。同时,引入这样一个协调者,便于将分布式协调的职责从应用中分离出来,从
+而可以大大减少系统之间的耦合性,而且能够显著提高系统的可扩展性。
+ZooKeeper中特有的 Watcher注册与异步通知机制,能够很好地实现分布式环境下不同
+机器,甚至是不同系统之间的协调与通知,从而实现对数据变更的实时处理。基于
+ZooKeeper实现分布式协调与通知功能,通常的做法是不同的客户端都对 ZooKeeper上
+同一个数据节点进行 Watcher注册,监听数据节点的变化(包括数据节点本身及其子节
+点),如果数据节点发生变化,那么所有订阅的客户端都能够接收到相应的 Watcher通
+知,并做出相应的处理。
+MySQL数据复制总线: Mysql_Replicator
+MySQL数据复制总线(以下简称“复制总线)是一个实时数据复制框架,用于在不同
+的 MySQL数据库实例之间进行异步数据复制和数据变化通知。整个系统是一个由
+MySQL数据库集群、消息队列系统、任务管理监控平台以及 ZooKeeper集群等组件共
+同构成的一个包含数据生产者、复制管道和数据消费者等部分的数据总线系统,图6-5
+所示是该系统的整体结构图。
+RUNNING
+Producer
+ZooKeeper
+Store
+Store
+STANDEY
+图6-5. MySQL数据复制总线结构图
+6.1典型应用场景及实现注173
+
+<==========================184end ==============================>
+<==========================185start==============================>
+
+在该系统中, ZooKeeper主要负责进行一系列的分布式协调工作,在具体的实现上,根
+据功能将数据复制组件划分为三个核心子模块:Core、 Server和 Monitor,每个模块分
+别为一个单独的进程,通过 ZooKeeper进行数据交换。
+Core实现了数据复制的核心逻辑,其将数据复制封装成管道,并抽象出生产者和
+消费者两个概念,其中生产者通常是 MySQL数据库的 Binlog日志
+Server负责启动和停止复制任务。
+Monitor负责监控任务的运行状态,如果在数据复制期间发生异常或出现故障会进
+行告警。
+三个子模块之间的关系如图66所示。
+任务监控
+任务控制
+Core
+Server
+Task
+Store
+数据复制tor
+图6-6. MySQL数据复制子组件关系图
+每个模块作为独立的进程运行在服务端,运行时的数据和配置信息均保存在 ZooKeeper
+上,Web控制台通过 ZooKeeper上的数据获取到后台进程的数据,同时发布控制信息。
+任务注册
+Core进程在启动的时候,首先会向mysqlreplicatortasks节点(以下简称“任务列表节
+点”)注册任务。例如,对于一个“复制热门商品的任务,Task所在机器在启动的时
+候,会首先在任务列表节点上创建一个子节点,例如/mysqlreplicator/tasks/ccopy_hotitem
+(以下简称“任务节点”),如图6-7所示。如果在注册过程中发现该子节点已经存在,
+说明已经有其他Task机器注册了该任务,因此自己不需要再创建该节点了。
+注2:读者可以访问ttp: 2: http: //dev.mysgl. com/doc/refiman/5.5/en/t. html MySQL.com/doc/rima/5.5/e/ay-log.html查看更多关于MySQL数据
+库 Binary Log相关的内容
+174第6章 ZooKeeper的典型应用场景
+
+<==========================185end ==============================>
+<==========================186start==============================>
+
+/mysol_ replicstor
+tasks.
+copy hot_item
+(task name)
+instances
+status
+图6-7. MySQL数据复制组件热备份的 ZooKeeper节点示意图
+任务热备份
+为了应对复制任务故障或者复制任务所在主机故障,复制组件采用“热备份”的容灾方
+式,即将同一个复制任务部署在不同的主机上我们称这样的机器为“任务机器”,主、
+备任务机器通过 ZooKeeper互相检测运行健康状况。
+为了实现上述热备方案,无论在第一步中是否创建了任务节点,每台任务机器都需要在
+mysqlreplicator/tasks/copyhot item/instances节点上将自己的主机名注册上去。注意,
+这里注册的节点类型很特殊,是一个临时的顺序节点。在注册完这个子节点后,通常一
+个完整的节点名如下:/ Imysql replicator/tsks/copy_hot item/intsances/ Hostname-,其
+中最后的序列号就是临时顺序节点的精华所在。关于 ZooKeeper的临时顺序节点生成原
+理,将在7.1.2节中做详细讲解。
+在完成该子节点的创建后,每台任务机器都可以获取到自己创建的节点的完成节点名以
+及所有子节点的列表,然后通过对比判断自己是否是所有子节点中序号最小的。如果自
+己是序号最小的子节点,那么就将自己的运行状态设置为 RUNNING,其余的任务机器
+则将自己设置为 STANDBY我们将这样的热备份策略称为“小序号优先”策略。
+热备切换
+完成运行状态的标识后,任务的客户端机器就能够正常工作了,其中标记为 RUNNING
+的客户端机器进行正常的数据复制,而标记为 STANDBY的客户端机器则进入待命状态。
+这里所谓待命状态,就是说一旦标记为 RUNNING的机器出现故障停止了任务执行,那
+么就需要在所有标记为 STANDBY的客户端机器中再次按照“小序号优先”策略来选出
+6.1典型应用场景及实现注175
+
+<==========================186end ==============================>
+<==========================187start==============================>
+
+RUNNING机器来执行,具体的做法就是标记为 STANDBY的机器都需要在/ mysql
+replicator/tasks/copyhotitem/instances节点上注册一个“子节点列表变更”的Watcher
+监听,用来订阅所有任务执行机器的变化情况旦 RUNNING机器宕机与 ZooKeeper
+断开连接后,对应的节点就会消失,于是其他机器也就接收到了这个变更通知,从而开
+始新一轮的 RUNNING选举。
+记录执行状态
+既然使用了热备份,那么 RUNNING任务机器就需要将运行时的上下文状态保留给
+STANDBY任务机器。在这个场景中,最主要的上下文状态就是数据复制过程中的一些
+进度信息,例如Binlog日志的消费位点,因此需要将这些信息保存到 ZooKeeper上以便
+共享。在MysqlReplicator的设计中,选择了mysqlreplicator/tasks/copyhotitem
+lastCommit作为 Binlog日志消费位点的存储节点, RUNNING任务机器会定时向这个节
+点写入当前的 Binlog日志消费位点。
+控制台协调
+在上文中我们主要讲解了Core组件是如何进行分布式任务协调的,接下来我们再看看
+Server是如何来管理Core组件的。在 MysqlReplicator中, Server主要的工作就是进行
+任务的控制,通过 ZooKeeper来对不同的任务进行控制与协调 Server会将每个复制任
+务对应生产者的元数据,即库名、表名、用户名与密码等数据库信息以及消费者的相关
+信息以配置的形式写入任务节点/mysqlreplicator/tasks/copy hot item中去,以便该任务
+的所有任务机器都能够共享该复制任务的配置。
+冷备切换
+到目前为止我们已经基本了解了 MysqlReplicator的工作原理,现在再回过头来看上面
+提到的热备份。在该热备份方案中,针对一个任务,都会至少分配两台任务机器来进行
+热备份,但是在一定规模的大型互联网公司中,往往有许多 MySQL实例需要进行数据
+复制,每个数据库实例都会对应一个复制任务,如果每个任务都进行双机热备份的话,
+那么显然需要消耗太多的机器。
+因此我们同时设计了一种冷备份的方案,它和热备份方案最大的不同点在于,对所有任
+务进行分组,如图68所示。
+176第6章 ZooKeeper的典型应用场景
+
+<==========================187end ==============================>
+<==========================188start==============================>
+
+task-groups
+groupt
+copy hot_item
+(task name
+[Hostname]-1
+status
+图6-8. MySQL数据复制组件冷备份的 ZooKeeper节点示意图
+和热备份中比较大的区别在于,Core进程被配置了所属 Group(组)。举个例子来说,
+假如一个Core进程被标记了 groupl,那么在Core进程启动后,会到对应的 ZooKeeper
+groupl节点下面获取所有的Task列表,假如找到了任务“copy hot item”之后,就会
+遍历这个Task列表的 instances节点,但凡还没有子节点的,则会创建一个临时的顺序
+/mysql_replicator/task-groups/group lcopy_hot_item/instances/[ Hostname]-1-
+然,在这个过程中,其他Core进程也会在这个 instances节点下创建类似的子节点。和
+热备份中的“小序号优先”策略一样,顺序小的Core进程将自己标记为 RUNNING,不
+同之处在于,其他Core进程则会自动将自己创建的子节点删除,然后继续遍历下一个
+Task节点——我们将这样的过程称为“冷备份扫描”。就这样,所有Core进程在一个扫
+描周期内不断地对相应的 Group下面的ask进行冷备份扫描。整个过程可以通过如图
+6-9所示的流程图来表示。
+冷热备份对比
+从上面的讲解中,我们基本对热备份和冷备份两种运行方式都有了一定的了解,现在再
+来对比下这两种运行方式。在热备份方案中,针对一个任务使用了两台机器进行热备份,
+借助 ZooKeeper的 Watcher通知机制和临时顺序节点的特性,能够非常实时地进行互相
+协调,但缺陷就是机器资源消耗比较大。而在冷备份方案中,采用了扫描机制,虽然降
+低了任务协调的实时性,但是节省了机器资源。
+6.1典型应用场景及实现注177
+
+<==========================188end ==============================>
+<==========================189start==============================>
+
+Care进程
+启动
+对应组别的
+as列表
+下一个sk
+否已经有ore程
+在执行Task
+创 instances
+子节点
+ostn ame时
+除当前Core
+进程创建的子节
+标记当Core进程为
+图6-9. MySQL数据复制组件冷备份的流程图
+一种通用的分布式系统机器间通信方式
+在绝大部分的分布式系统中,系统机器间的通信无外乎心跳检测、工作进度汇报和系统
+调度这三种类型。接下来,我们将围绕这三种类型的机器通信来讲解如何基于 ZooKeeper
+去实现一种分布式系统间的通信方式。
+心跳检测
+机器间的心跳检测机制是指在分布式环境中,不同机器之间需要检测到彼此是否在正常
+运行,例如A机器需要知道B机器是否正常运行。在传统的开发中,我们通常是通过
+主机之间是否可以相互PING通来判断,更复杂一点的话,则会通过在机器之间建立长
+连接,通过TCP连接固有的心跳检测机制来实现上层机器的心跳检测,这些确实都是
+一些非常常见的心跳检测方法。
+178第6章 ZooKeeper的典型应用场景
+
+<==========================189end ==============================>
+<==========================190start==============================>
+
+下面来看看如何使用 ZooKeeper来实现分布式机器间的心跳检测。基于 ZooKeeper的临
+时节点特性,可以让不同的机器都在 ZooKeeper的一个指定节点下创建临时子节点,不
+同的机器之间可以根据这个临时节点来判断对应的客户端机器是否存活。通过这种方式,
+检测系统和被检测系统之间并不需要直接相关联,而是通过 ZooKeeper上的某个节点进
+行关联,大大减少了系统耦合。
+工作进度汇报
+在一个常见的任务分发系统中,通常任务被分发到不同的机器上执行后,需要实时地将
+自己的任务执行进度汇报给分发系统。这个时候就可以通过 ZooKeeper来实现。在
+ZooKeeper上选择一个节点,每个任务客户端都在这个节点下面创建临时子节点,这样
+便可以实现两个功能:
+通过判断临时节点是否存在来确定任务机器是否存活;
+·各个任务机器会实时地将自己的任务执行进度写到这个临时节点上去,以便中心系
+统能够实时地获取到任务的执行进度。
+系统调度
+使用 ZooKeeper,能够实现另一种系统调度模式:一个分布式系统由控制台和一些客户
+端系统两部分组成,控制台的职责就是需要将一些指令信息发送给所有的客户端,以控
+制它们进行相应的业务逻辑。后台管理人员在控制台上做的一些操作,实际上就是修改
+了 ZooKeeper上某些节点的数据,而 ZooKeeper进一步把这些数据变更以事件通知的形
+式发送给了对应的订阅客户端。
+总之,使用 ZooKeeper来实现分布式系统机器间的通信,不仅能省去大量底层网络通信
+和协议设计上重复的工作,更为重要的一点是大大降低了系统之间的耦合,能够非常方
+便地实现异构系统之间的灵活通信。
+6.1.5集群管理
+随着分布式系统规模的日益扩大,集群中的机器规模也随之变大,因此,如何更好地进
+行集群管理也显得越来越重要了。
+所谓集群管理,包括集群监控与集群控制两大块,前者侧重对集群运行时状态的收集,
+后者则是对集群进行操作与控制。在日常开发和运维过程中,我们经常会有类似于如下
+的需求。
+希望知道当前集群中究竟有多少机器在工作。
+6.1典型应用场景及实现注179
+
+<==========================190end ==============================>
+<==========================191start==============================>
+
+●对集群中每台机器的运行时状态进行数据收集。
+·对集群中机器进行上下线操作。
+在传统的基于 Agent的分布式集群管理体系中都是通过在集群中的每台机器上部署一
+个 Agent,由这个 Agent负责主动向指定的一个监控中心系统(监控中心系统负责将所
+有数据进行集中处理,形成一系列报表,并负责实时报警,以下简称“监控中心”)汇
+报自己所在机器的状态。在集群规模适中的场景下,这确实是一种在生产实践中广泛使
+用的解决方案,能够快速有效地实现分布式环境集群监控,但是一旦系统的业务场景增
+多,集群规模变大之后,该解决方案的弊端也就显现出来了。
+大规模升级困难
+以客户端形式存在的 Agent,在大规模使用后一旦遇上需要大规模升级的情况,
+就非常麻烦,在升级成本和升级进度的控制上面临巨大的挑战。
+统一的 Agent无法满足多样的需求
+对于机器的CPU使用率、负载(Load)、内存使用率、网络吞吐以及磁盘容量等机
+器基本的物理状态,使用统一的 Agent来进行监控或许都可以满足。但是,如果需
+要深入应用内部,对一些业务状态进行监控,例如,在一个分布式消息中间件中,
+希望监控到每个消费者对消息的消费状态;或者在一个分布式任务调度系统中,需
+要对每个机器上任务的执行情况进行监控很显然,对于这些业务耦合紧密的监控
+需求,不适合由一个统一的 Agent来提供。
+编程语言多样性
+随着越来越多编程语言的出现,各种异构系统层出不穷。如果使用传统的 Agent方
+式,那么需要提供各种语言的 Agent客户端。另一方面,“监控中心”在对异构系
+统的数据进行整合上面临巨大挑战。
+ZooKeeper具有以下两大特性。
+·客户端如果对ZooKeeper的一个数据节点注册 Watcher监听,那么当该数据节点的
+内容或是其子节点列表发生变更时, ZooKeeper服务器就会向订阅的客户端发送变
+更通知。
+对在ZooKeeper上创建的临时节点,一旦客户端与服务器之间的会话失效,那么该
+临时节点也就被自动清除。
+利用 ZooKeeper的这两大特性,就可以实现另一种集群机器存活性监控的系统。例如,
+180第6章 ZooKeeper的典型应用场景
+
+<==========================191end ==============================>
+<==========================192start==============================>
+
+监控系统在clusterServers节点上注册一个 Watcher监听,那么但凡进行动态添加机器的
+操作,就会在/clusterServers节点下创建一个临时节点:/clusterServers/[ Hostname]这
+样一来,监控系统就能够实时检测到机器的变动情况,至于后续处理就是监控系统的业
+务了。下面我们就通过分布式日志收集系统和在线云主机管理这两个典型例子来看看如
+何使用 ZooKeeper实现集群管理。
+分布式日志收集系统
+分布式日志收集系统的核心工作就是收集分布在不同机器上的系统日志,在这里我们重
+点来看分布式日志系统(以下简称“日志系统”)的收集器模块。
+在一个典型的日志系统的架构设计中,整个日志系统会把所有需要收集的日志机器(下
+文我们以“日志源机器”代表此类机器)分为多个组别,每个组别对应一个收集器,这
+个收集器其实就是一个后台机器(下文我们以“收集器机器”代表此类机器),用于收
+集日志。对于大规模的分布式日志收集系统场景,通常需要解决如下两个问题。
+变化的日志源机器
+在生产环境中,伴随着机器的变动,每个应用的机器几乎每天都是在变化的(机器
+硬件问题、扩容、机房迁移或是网络问题等都会导致一个应用的机器变化),也就
+是说每个组别中的日志源机器通常是在不断变化的。
+变化的收集器机器
+日志收集系统自身也会有机器的变更或扩容,于是会出现新的收集器机器加入或是
+老的收集器机器退出的情况。
+上面两个问题,无论是日志源机器还是收集器机器的变更,最终都归结为一点:如何快
+速、合理、动态地为每个收集器分配对应的日志源机器,这也成为了整个日志系统正确
+稳定运转的前提,也是日志收集过程中最大的技术挑战之一。在这种情况下,引入
+ZooKeeper是个不错的选择,下面我们就来看 ZooKeeper在这个场景中的使用
+注册收集器机器
+使用 ZooKeeper来进行日志系统收集器的注册,典型做法是在 ZooKeeper上创建一个节
+点作为收集器的根节点,例如/ogscollector(下文我们以“收集器节点”代表该数据节
+点),每个收集器机器在启动的时候,都会在收集器节点下创建自己的节点,例如
+ogscollector/Hostname],如图6-10所示。
+6.1典型应用场景及实现注181
+
+<==========================192end ==============================>
+<==========================193start==============================>
+
+host2
+hostN
+status
+图6-10.分布式日志收集系统的 ZooKeepr节点示意图
+任务分发
+待所有收集器机器都创建好自己对应的节点后,系统根据收集器节点下子节点的个数,
+将所有日志源机器分成对应的若干组,然后将分组后的机器列表分别写到这些收集器机
+器创建的子节点(例如/logss/collector/host)上去。这样一来,每个收集器机器都能够
+从自己对应的收集器节点上获取日志源机器列表进而开始进行日志收集工作。
+状态汇报
+完成收集器机器的注册以及任务分发后,我们还要考虑到这些机器随时都有挂掉的可能。
+因此,针对这个问题,我们需要有一个收集器的状态汇报机制:每个收集器机器在创建
+完自己的专属节点后,还需要在对应的子节点上创建一个状态子节点,例如/logs
+collector/host/stus,每个收集器机器都需要定期向该节点写入自己的状态信息。我们
+可以把这种策略看作是一种心跳检测机制,通常收集器机器都会在这个节点中写入日志
+收集进度信息。日志系统根据该状态子节点的最后更新时间来判断对应的收集器机器是
+否存活。
+动态分配
+如果收集器机器挂掉或是扩容了,就需要动态地进行收集任务的分配。在运行过程中,
+日志系统始终关注着/logscollector这个节点下所有子节点的变更,一旦检测到有收集器
+机器停止汇报或是有新的收集器机器加入,就要开始进行任务的重新分配。无论是针对
+收集器机器停止汇报还是新机器加入的情况,日志系统都需要将之前分配给该收集器的
+所有任务进行转移。为了解决这个问题,通常有两种做法。
+全局动态分配
+这是一种简单粗暴的做法,在出现收集器机器挂掉或是新机器加入的时候,日志系
+182第6 ZooKeeper章的典型应用场景
+
+<==========================193end ==============================>
+<==========================194start==============================>
+
+统需要根据新的收集器机器列表,立即对所有的日志源机器重新进行一次分组,然
+后将其分配给剩下的收集器机器。
+局部动态分配
+全局动态分配方式虽然策略简单,但是存在一个问题:一个或部分收集器机器的变
+更,就会导致全局动态任务的分配,影响面比较大,因此风险也就比较大。所谓局
+部动态分配,顾名思义就是在小范围内进行任务的动态分配。在这种策略中,每个
+收集器机器在汇报自己日志收集状态的同时,也会把自己的负载汇报上去。请注意,
+这里提到的负载并不仅仅只是简单地指机器PU负载(oad),而是一个对当前收
+集器任务执行的综合评估,这个评估算法和 ZooKeeper本身并没有太大的关系,这
+里不再赘述。
+在这种策略中,如果一个收集器机器挂了,那么日志系统就会把之前分配给这个机
+器的任务重新分配到那些负载较低的机器上去。同样,如果有新的收集器机器加入,
+会从那些负载高的机器上转移部分任务给这个新加入的机器。
+注意事项
+在上面的介绍中,我们已经了解了 ZooKeeper是如何协调一个分布式日志收集系统工作
+的,接下来再来看看一些细节问题。
+节点类型
+我们首先来看/logsscollector这个节点下面子节点的节点类型。在上面已经提到,
+logs/collector节点下面的所有子节点都代表了每个收集器机器,那么初步认为这些
+子节点必须选择临时节点,原因是日志系统可以根据这些临时节点来判断收集器机
+器的存活性。但是,同时还需要注意的一点是:在分布式日志收集这个场景中,收
+集器节点上还会存放所有已经分配给该收集器机器的日志源机器列表,如果只是简
+单地依靠 ZooKeeper自身的临时节点机制,那么当一个收集器机器挂掉或是当这个
+收集器机器中断“心跳汇报”的时候,待该收集器节点的会话失效后,ZooKeeper
+就会立即删除该节点,于是,记录在该节点上的所有日志源机器列表也就随之被清
+除掉了。
+从上面的描述中可以知道,临时节点显然无法满足这里的业务需求,所以我们选择
+了使用持久节点来标识每一个收集器机器同时在这个持久节点下面分别创建
+logs/collector/[ Hostname/status节点来表征每一个收集器机器的状态。这样一来,
+既能实现日志系统对所有收集器的监控,同时在收集器机器挂掉后,依然能够准确
+6.1典型应用场景及实现注183
+
+<==========================194end ==============================>
+<==========================195start==============================>
+
+地将分配于其中的任务还原。
+日志系统节点监听
+在实际生产运行过程中,每一个收集器机器更改自己状态节点的频率可能非常高
+(如每秒1次或更短),而且收集器的数量可能非常大,如果日志系统监听所有这些
+节点变化,那么通知的消息量可能会非常大。另一方面,在收集器机器正常工作的
+情况下,日志系统没有必要去实时地接收每次节点状态变更,因此大部分这些状态
+变更通知都是无用的。因此我们考虑放弃监听设置,而是采用日志系统主动轮询收
+集器节点的策略,这样就节省了不少网卡流量,唯一的缺陷就是有一定的延时(考
+虑到分布式日志收集系统的定位,这个延时是可以接受的)。
+在线云主机管理
+在线云主机管理通常出现在那些虚拟主机提供商的应用场景中。在这类集群管理中,有
+很重要的一块就是集群机器的监控。这个场景通常对于集群中的机器状态,尤其是机器
+在线率的统计有较高的要求,同时需要能够快速地对集群中机器的变更做出响应。
+在传统的实现方案中,监控系统通过某种手段(比如检测主机的指定端口)来对每台机
+器进行定时检测,或者每台机器自己定时向监控系统汇报“我还活着”。但是这种方式
+需要每一个业务系统的开发人员自己来处理网络通信、协议设计、调度和容灾等诸多琐
+碎的问题。下面来看看使用 ZooKeeper实现的另一种集群机器存活性监控系统。针对这
+个系统,我们的需求点通常如下。
+●如何快速地统计出当前生产环境一共有多少台机器?
+·如何快速地获取到机器上/下线的情况?
+如何实时监控集群中每台主机的运行时状态?
+机器上/下线
+为了实现自动化的线上运维,我们必须对机器的上/下线情况有一个全局的监控。通常在
+新增机器的时候,需要首先将指定的Agen部署到这些机器上去。 Agent部署启动之后,
+会首先向 ZooKeeper的指定节点进行注册,具体的做法就是在机器列表节点下面创建一
+个临时子节点,例如/ XAEmachine/[Hostname](下文我们以“主机节点”代表这个节点),
+如图6-11所示。
+184第6章 ZooKeeper的典型应用场景
+
+<==========================195end ==============================>
+<==========================196start==============================>
+
+_host1_
+host2
+hostN
+图6-11.在线机器列表的 ZooKeeper节点示意图
+当 Agent在 ZooKeeper上创建完这个临时子节点后,对XAEmachines节点关注的监控
+中心就会接收到“子节点变更”事件,即上线通知,于是就可以对这个新加入的机器开
+启相应的后台管理逻辑。另一方面,监控中心同样可以获取到机器下线的通知,这样便
+实现了对机器上/下线的检测,同时能够很容易地获取到在线的机器列表,对于大规模的
+扩容和容量评估都有很大的帮助。
+机器监控
+对于一个在线云主机系统,不仅要对机器的在线状态进行检测,还需要对机器的运行时
+状态进行监控。在运行的过程中, Agent会定时将主机的运行状态信息写入 ZooKeeper
+上的主机节点,监控中心通过订阅这些节点的数据变更通知来间接地获取主机的运行时
+信息。
+随着分布式系统规模变得越来越庞大,对集群机器的监控和管理显得越来越重要。上面
+提到的这种借助 ZooKeeper来实现的方式,不仅能够实时地检测到集群中机器的上/下线
+情况,而且能够实时地获取到主机的运行时信息从而能够构建出一个大规模集群的主
+机图谱。
+6.1.6 Master选举
+Master选举是一个在分布式系统中非常常见的应用场景。分布式最核心的特性就是能够
+将具有独立计算能力的系统单元部署在不同的机器上,构成一个完整的分布式系统。而
+与此同时,实际场景中往往也需要在这些分布在不同机器上的独立系统单元中选出一个
+所谓的“老大”,在计算机科学中,我们称之为 Master
+在分布式系统中, Master往往用来协调集群中其他系统单元,具有对分布式系统状态变
+更的决定权。例如,在一些读写分离的应用场景中,客户端的写请求往往是由 Master
+6.1典型应用场景及实现注185
+
+<==========================196end ==============================>
+<==========================197start==============================>
+
+来处理的;而在另一些场景中, Master则常常负责处理一些复杂的逻辑,并将处理结果
+同步给集群中其他系统单元。 Master选举可以说是 ZooKeeper最典型的应用场景了,在
+本节中,我们就结合“一种海量数据处理与共享模型”这个具体例子来看看ZooKeeper
+在集群 Master选举中的应用场景。
+在分布式环境中,经常会碰到这样的应用场景:集群中的所有系统单元需要对前端业务
+提供数据,比如一个商品ID,或者是一个网站轮播广告的广告ID(通常出现在一些广
+告投放系统中)等,而这些商品ID或是广告ID往往需要从一系列的海量数据处理中计
+算得到这通常是一个非常耗费IO和CPU资源的过程。鉴于该计算过程的复杂性,
+如果让集群中的所有机器都执行这个计算逻辑的话,那么将耗费非常多的资源。一种比
+较好的方法就是只让集群中的部分,甚至只让其中的一台机器去处理数据计算,一旦计
+算出数据结果,就可以共享给整个集群中的其他所有客户端机器,这样可以大大减少重
+复劳动,提升性能。
+这里我们以一个简单的广告投放系统后台场景为例来讲解这个模型。整个系统大体上可
+以分成客户端集群、分布式缓存系统、海量数据处理总线和 ZooKeeper四个部分,如
+图6-12所示。
+海量数据推荐本地化
+处理系统
+生活
+计算
+Master Client
+存放计算结果
+内存数据库
+注册
+选出唯的 Master
+ZooKeeper
+共享计算结果
+1. Master选举
+2.监控 Master的状态
+ClientCkentClent
+ClientClient
+图6-12.广告投放系统后台与 ZooKeeper交互示意图
+首先我们来看整个系统的运行机制。图6-2中的集群每天定时会通过 ZooKeeper
+来实现 Master选举。选举产生 Master客户端之后,这个 Master就会负责进行一系列的
+海量数据处理,最终计算得到一个数据结果,并将其放置在一个内存/数据库中。同时,
+186第6章 ZooKeeper的典型应用场景
+
+<==========================197end ==============================>
+<==========================198start==============================>
+
+Master还需要通知集群中其他所有的客户端从这个内存/数据库中共享计算结果。
+接下去,我们将重点来看 Master选举的过程首先来明确下 Master选举的需求:在集
+群的所有机器中选举出一台机器作为 Master针对这个需求,通常情况下,我们可以选
+择常见的关系型数据库中的主键特性来实现:集群中的所有机器都向数据库中插入一条
+相同主键ID的记录,数据库会帮助我们自动进行主键冲突检查,也就是说,所有进行
+插入操作的客户端机器中,只有一台机器能够成功那么,我们就认为向数据库中成
+功插入数据的客户端机器成为 Master
+乍一看,这个方案确实可行,依靠关系型数据库的主键特性能够很好地保证在集群中选
+举出唯一的一个 Master。但是我们需要考虑的另一个问题是,如果当前选举出的Master
+挂了,那么该如何处理?谁来告诉我 Master了呢?显然,关系型数据库没法通知我们
+这个事件。那么,如果使用 ZooKeeper是否可以做到这一点呢?
+在5.3.2节中,我们介绍了 ZooKeeper创建节点的AP接口,其中提到的一个重要特性
+便是:利用 ZooKeeper的强一致性,能够很好地保证在分布式高并发情况下节点的创建
+一定能够保证全局唯一性,即 ZooKeeper将会保证客户端无法重复创建一个已经存在的
+数据节点。也就是说,如果同时有多个客户端请求创建同一个节点,那么最终一定只有
+一个客户端请求能够创建成功。利用这个特性,就能很容易地在分布式环境中进行
+Master选举了。
+在这个系统中,首先会在 ZooKeeper上创建一个日期节点,例如“2013-09-20”,如
+图6-13所示。
+/master_election
+2013-09-20
+binding
+图6-13.一种海量数据处理与共享模型的 ZooKeeper节点示意图
+客户端集群每天都会定时往 ZooKeeper上创建一个临时节点,例如/master election
+2013-09-20/binding。在这个过程中,只有一个客户端能够成功创建这个节点,那么这个
+客户端所在的机器就成为了 Master。同时,其他没有在 ZooKeeper上成功创建节点的客
+户端,都会在节点masterelection/201-09-20上注册一个子节点变更的 Watcher,用于
+监控当前的 Master机器是否存活,一旦发现当前的 Master挂了,那么其余的客户端将
+会重新进行 Master选举。
+6.1典型应用场景及实现注187
+
+<==========================198end ==============================>
+<==========================199start==============================>
+
+从上面的讲解中,我们可以看到,如果仅仅只是想实现 Master选举的话,那么其实只需
+要有一个能够保证数据唯一性的组件即可,例如关系型数据库的主键模型就是非常不错
+的选择。但是,如果希望能够快速地进行集群 Master动态选举,那么基于 ZooKeeper
+来实现是一个不错的新思路。
+6.1.7分布式锁
+分布式锁是控制分布式系统之间同步访问共享资源的一种方式。如果不同的系统或是同
+一个系统的不同主机之间共享了一个或一组资源,那么访问这些资源的时候,往往需要
+通过一些互斥手段来防止彼此之间的干扰,以保证一致性,在这种情况下,就需要使用
+分布式锁了。
+在平时的实际项目开发中,我们往往很少会去在意分布式锁,而是依赖于关系型数据库
+固有的排他性来实现不同进程之间的互斥。这确实是一种非常简便且被广泛使用的分布
+式锁实现方式。然而有一个不争的事实是,目前绝大多数大型分布式系统的性能瓶颈都
+集中在数据库操作上。因此,如果上层业务再给数据库添加一些额外的锁,例如行锁、
+表锁甚至是繁重的事务处理,那么是不是会让数据库更加不堪重负呢?下面我们来看看
+使用 ZooKeeper如何实现分布式锁,这里主要讲解排他锁和共享锁两类分布式锁。
+排他锁
+排他锁(Exclusive Locks,简称X锁),又称为写锁或独占锁,是一种基本的锁类型。
+如果事务T1对数据对象O1加上了排他锁,那么在整个加锁期间,只允许事务T1对O1
+进行读取和更新操作,其他任何事务都不能再对这个数据对象进行任何类型的操作
+直到T释放了排他锁。
+从上面讲解的排他锁的基本概念中,我们可以看到排他锁的核心是如何保证当前有且
+仅有一个事务获得锁,并且锁被释放后,所有正在等待获取锁的事务都能够被通知到。
+下面我们就来看看如何借助 ZooKeeper实现排他锁。
+定义锁
+在通常的Java开发编程中,有两种常见的方式可以用来定义锁,分别是 synchronized机
+制和JDK5提供的 ReentrantLock.然而,在 ZooKeeper中,没有类似于这样的AP可以
+直接使用,而是通过 ZooKeeper上的数据节点来表示一个锁,例如exclusivelock/loc
+节点就可以被定义为一个锁,如图6-14所示。
+188第6章 ZooKeeper的典型应用场景
+
+<==========================199end ==============================>

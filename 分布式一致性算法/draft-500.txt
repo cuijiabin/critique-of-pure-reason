@@ -1,0 +1,1156 @@
+<==========================400start==============================>
+
+wchc
+wchc命令用于输出当前服务器上管理的 Watcher的详细信息,以会话为单位进行归组,
+同时列出被该会话注册了 Watcher的节点路径,如图8-13所示。
+图8-13.四字命令wchc示例
+wchp#2
+wchp命令和wchc命令非常类似,也是用于输出当前服务器上管理的 Watcher的详
+细信息,不同点在于wchp命令的输出信息以节点路径为单位进行归组,如图8-14
+所示。
+图8-14.四字命令chp示例
+mntr
+mntr命令用于输出比stat命令更为详尽的服务器统计信息,包括请求处理的延迟情
+况、服务器内存数据库大小和集群的数据同步情况。在输出结果中,每一行都是一个
+key- -value的键值对,运维人员可以根据这些输出信息进行 ZooKeeper的运行时状态监控,
+如图8-15所示。
+注2:注意,wchc和wchp这两个命令执行的输出结果都是针对会话ID的,这对于运维人员来说可视
+化效果并不理想,可以尝试将执行cons命令输出的信息整合起来,就可以用客户端IP来代替
+会话D了,具体可以看如下实现:htp:i-l. id ,: http: jm-blog. aliapp.com/?p=1450..com/?p=1450
+8.2四字命令389
+
+<==========================400end ==============================>
+<==========================401start==============================>
+
+666415
+35
+图8-15.四字命令mntr之 Follower服务器示例
+图8-15是 Follower在服务器上执行mntr命令,如果在 Leader服务器上执行该命令的话,
+还可以获取到更多的信息,如图8-16所示。
+echo antr nc loca Thost 2181
+4.5--1, butit on 033/3/201421:gt
+1921
+385030
+3k
+4zk
+ate data size 666415
+iptor count32
+criptor_
+图8-16.四字命令mntr之 Leader服务器示例
+8.3 JMX
+在8.2节中,我们讲解了 ZooKeeper的四字命令,了解了如何通过这些简单的命令来获
+取一些 ZooKeeper的运行时信息,尤其是通过mntr命令,我们已经能够非常方便地获
+取到 ZooKeeper服务器上诸如数据节点总个数、内存数据大小和 Watcher个数等重要的
+运行时信息。但有时候对于 ZooKeeper的运维人员来说,仅仅是信息的获取还不够,四
+字命令虽然使用非常方便,但却无法让运维人员对 ZooKeeper进行相应的管控。
+提到对运行时Java系统的管控,不得不提jmx(Java Management Extensions,java管
+理扩展)。JMX是一个为应用程序、设备、系统等植入管理功能的框架,能够非常方便
+地让Java系统对外提供运行时数据信息获取和系统管控的接口。从3.3.0版本开始,
+ZooKeeper也使用了标准的JMX方式来对外提供运行时数据信息和便捷的管控接口。在
+本节中,我们将重点讲解如何通过JMX方式来进行 ZooKeeper的运维
+8.3.1开启远程JMX
+从 Apache官方网站上下载的 ZooKeeper,认开启了JMX功能,但是却只限本地连接,
+390第 ZooKeeper8章运维
+
+<==========================401end ==============================>
+<==========================402start==============================>
+
+无法通过远程连接,读者可以打开%ZK%bin目录下的 zServersh文件,找到如
+图8-17所示的配置。
+ZOOMAIN-"-Dcom. sun. management. jxreote -Dcom. sun. management.
+imxremote. local. only-$JMXLOCALONLY org. apache. zooke
+图8-17.默认的JM配置
+在这个配置中并没有开启远程连接JMX的端口信息,通常需要加入以下三个配置才能
+开启远程JMX:
+-Dcom. sun. management. jmxremote.port=5000
+-Dcom. sun. management. jmx remote. ssl=false
+-Dcom. sun. management. jmxremote. authenticate=false
+例如我们配置开启远程JMX端口为21811同时不需要任何权限,如图8-18所示。
+ZooMAIN-"-Do
+e.port-21811
+-Dcom.
+-Dcom.sun.
+ticate-false
+org. apac
+lain
+图8-18.开启远程访问的JMX配置
+通过上述配置,就可以允许远程机器和 ZooKeeper服务器进行JM连接了
+8.3.2通过 JConsole连接 ZooKeeper
+JConsole(ava监视和管理控制台)是一个ava内置的基于JMX的图形化管理工具,是
+最常用的JMX连接器。在本节 JConsol中,我们将使用来进行 ZooKeeper的JMX管理。
+我们首先按照上一节中介绍的方法开启 ZooKeeper服务器的远程JM连接。假设我们
+搭建一个由三台服务器组成的 ZooKeeper集群,分别有机器A、B和C,其中C是 Leader,
+A和B是 Follower,并都开启了JMX远程端口:21811
+使用 JConsole,我们首先连接上服务器A,连接成功后,如图8-19所示。
+8.3Jm391
+
+<==========================402end ==============================>
+<==========================403start==============================>
+
+述内存程
+时:全
+内存使用情兄
+20
+15m
+10
+19
+已使1已交大值17
+程
+图8-19. JConsole连接上 ZooKeeper的JMX
+连接成功后,我们可以看到界面上依次有“概述”、“内存”和“线程”等标签页,这些
+都是 JConsole上的基本信息,读者可以通过其他书籍或是互联网资料来对其进行详细
+了解。本书主要讲解 MBean标签页中的信息,如图8-20所示。
+监视和管理控制
+21811
+连口帮助
+内存类
+JRisplemestatim
+. Fun asnagenent
+属性值
+j
+名
+javs atil letting
+etiesln
+Loguist
+ore apachs. ZelaperSarvie uclintCoanscPerMest
+glieat+_ o0oo
+属性
+Startfinea 160::.
+属性
+操作
+5
+c
+Ticklise
+200
+12.001
+/
+属性
+⊥操作
+arigliea2
+属性
+realies. 3
+属性
+图8-20.查看JConsole的 MBean标签页
+在 MBean标签页中,可以看到org. apache. ZooKeeperServ节点,及其树状结构的子节
+注3:读者可以在Java的官方网站上找到更多关于JMX以及 3: JavaJMX : http: // www.  oracle.  com/的内容:http:ww.oracle.com
+technetwork/java/index. html.
+392第 ZooKeeper8章运维
+
+<==========================403end ==============================>
+<==========================404start==============================>
+
+点列表,这些就是 ZooKeeper服务器对外暴露的 MBean
+在org apache. ZooKeeperService节点下,首先可以看到 ReplicatedServeridl节点,从该
+节点的名字中,我们可以识别出当前连接的 ZooKeeper服务器的SD为1继续往下可
+以看到三个子节点: replica.、 replica.2和 replica.3,分别代表当前集群中的三台服务器。
+同时我们可以发现, replica2和 replica.3两个节点下面只有“属性”节点,而replica.1
+节点下还有一个 Follower节点,这也不足为奇,原因就是当前连接的服务器就是SD为
+1的服务器,因此对于SD为2和3的 ZooKeeper服务器,能够获取到的信息不多。从
+“属性”节点中,我们可以看到服务器的基本配置信息,包括所选用的 Leader选举算法
+(ElectionType)、单个客户端最大连接数(MaxClientCnxnsPerHost)会话的超时时间和
+启动时间等。
+我们再来看 replica.节点下的 Follower节点,如图8-21所示。
+ava监视和管理控制台
+21811
+回
+接窗口帮助
+述内存线程类摘
+JXMTmplenentation
+属性值
+con. sun managenent
+java.lang
+名称
+java. util. logging
+1og4j
+2181
+ore apsche. ZooKeeperServic
+011000039b
+ReplicatedServer_
+Host 60
+属性
+59
+replies.
+t40000
+露性
+Follower
+4000
+属性
+equests o
+操作
+eived 22182
+Connections
+validatio. 22247
+Socket [addr=/
+IStartTiae
+Sun Mar 16 20: 29: 58 CS..
+127.0.0. 1. TickTine
+2000
+InlleoryDataTrVersion
+3.4.3-1240972, built
+属性
+操作
+replica. 2
+属性
+replica3
+属性
+刷新
+图8-21.查看 Follower节点信息
+在 Follower节点下的“属性”节点上,我们可以看到 Follower服务器当前的运行时信息,
+包括:请求处理的平均延时( AvgRequestLatency)客户端服务器端口和收到/发送的数
+8.3m393
+
+<==========================404end ==============================>
+<==========================405start==============================>
+
+据包个数。在图8-21的示例中, replica.1节点下有一个 Follower节点,这表明当前服务
+器的角色是 Follower
+下面我们来看 Leader服务器的数据信息。通过同样的方式,我们使用 JConsole连接到
+服务器C上,如图8-22所示。
+首先,我们可以看到在 replica.3节点下已经出现了 Leader节点,表明该服务器的角色是
+Leader.选择“属性”节点,我们还可以发现,右侧出现了 CurrentZxid属性,表明当前
+Leader服务器上处理的最后一个事务的ZXID是0x14000045
+java监视和管理控制台
+连接口帮助
+述内存线程类摘要MB
+JNopleme
+属性值
+eom. sun. management
+java lang
+名称
+6java util. logging
+1 og4j rervice
+2181
+0x1400000045
+-ReplicatedServer_id3
+国属性
+10
+replics.
+t000
+国属性
+日 replica22
+ut4000
+属性
+replies3
+属性
+Leader
+属性
+Sun Mar1621:19:12c
+田操作
+2000
+曰 Connections
+4.5--1, built on 03.
+127.0.0.1
+InlenoryDatair
+刷新
+图8-22.使用 JConsole连接 Leader服务器
+下面我们再来看看有哪些对 Leader服务器的操作,如图8-23所示。
+394第8章 ZooKeeper运维
+
+<==========================405end ==============================>
+<==========================406start==============================>
+
+java监视和管理控制台
+21811
+连接帮助
+概述内存线程类摘n
+ntion
+JMImplementation
+操作调用
+com. sun. management
+javalang. String
+f()
+java.lang
+java. util. logging
+1h.
+ReplicatedServeri3
+org spache. ZooKeeperService
+属性
+replica.
+voidr
+replica. 2
+replica.3
+属性
+白
+eader
+申属性
+void resethaxlateney
+甲操作
+Connections
+127.0.0.1
+InMlemoryDatalre
+属性
+void resetstatistics
+操作
+图8-23.查看对 Leader服务器的操作项
+从图8-23中我们可以看到, Leader服务器对外提供了四个操作,表8-3中列举了这四个
+操作。
+表8-3. Leader服务器对外暴露的操作
+操作
+说明
+followerInfo()
+获取所有 Follower的运行时信息。该操作只在 Leader服务器上提供
+resetLatency()
+重置所有与客户端请求处理延时相关的统计
+resetMaxLatency()重置客户端请求处理的最大延时统计
+resetStatistics()
+重置所有客户端请求处理延时统计,以及所有客户端数据包发送与接
+收量的统计
+作为示例,我们执行 followerInfo操作,之后就会罗列出当前集群中所有Follower
+的运行时信息,如图8-24所示。
+从图8-24中我们可以看到,集群中一共有两个 Follower服务器。
+下面我们来看最后一个 MBean: InMemory DataTree这个 MBean就是 ZooKeeper服务
+器上的内存数据库,如图8-25所示。
+8.3JM395
+
+<==========================406end ==============================>
+<==========================407start==============================>
+
+图8-24.查看所有 Follower服务器的运行时信息
+ava监和管理控制台
+连接口
+述存线程要
+JHIopleeatation
+eoa. sun. tanagemeat
+Javs lane
+名称
+Jwa util Logging
+1
+are agache. ZookeeperService
+ReplicatedServer_id3
+田属性
+replica.
+treplics.2
+repliea. 3
+属性
+属性
+操作
+IoMemeryDataIree
+操作
+刷新
+图8-25.查看 InMemoryDataTree属性信息
+选择“属性”节点,我们可以看到当前内存数据库中最后处理的事务ID、数据节点的总
+个数以及 Watcher的总个数。
+下面我们再来看看针对内存数据库,我们有哪些操作,如图8-26所示。
+从图8-26中我们可以看到, ZooKeeper向我们提供了两个操作,分别用于统计内存数据
+库所有节点的数据总量和临时节点总个数。
+396第8 ZooKeeper章运维
+
+<==========================407end ==============================>
+<==========================408start==============================>
+
+帮
+述内存程类
+JMInplementation
+操作调用
+com sun. managenent
+teDataSire
+java util logging
+org spache. ZooleaperService
+ReplicstedServer_
+莲性
+rplicaI
+replics 2
+replica.3
+性
+Leader
+属性
+操作
+InllonoryDataTrse
+图8-26.查看 InMemoryDataTree的操作信息
+8.4监控
+关于 ZooKeeper的监控,这里主要介绍下阿里中间件的软负载团队开发的 TaoKeeper监
+控系统, Taokeeper主要从实时监控和数据统计两方面来保障 ZooKeeper集群的稳定性。
+8.4.1实时监控
+所谓实时监控,是指相对实时地对运行中的 ZooKeeper集群进行运行状态监控,包括对
+ZooKeeper节点可用性的监控和集群读写TPS的监控。
+节点可用性自检
+节点可用性自检是指对一个 ZooKeeper集群中每个服务器节点上的指定数据节点
+TAOKEEPER. MONITOR. ALIVE. CHECK定期进行三次如下操作序列:
+创建连接一发布数据一接收数据更新通知一获取数据一比对数据
+三次流程均成功且每次耗费的时间在指定的时间范围内即可视为该节点处于正常状态。
+注 4: taokeeper : https://github.com/al系统的官方网站:https:gthub.comalibaba/taokeeper
+8.4监控397
+
+<==========================408end ==============================>
+<==========================409start==============================>
+
+读写TPS监控
+在 Apache官方的 ZooKeeper版本中,我们无法直接看出 ZooKeeper的实时读写情况,
+为了便于 ZooKeeper的运维人员更精准地了解到当前 ZooKeeper服务器的负载,尤其是
+事务操作的负载,读写TPS监控功能就非常有必要了。从 TaoKeeper上,我们可以清楚
+地看到每台 ZooKeeper服务器的读写TPS详情,包括连接的创建与断开、数据节点的创
+建与删除、数据节点内容的读取与更新和子节点列表的获取等。
+8.4.2数据统计
+在8.2节中,我们提到了 ZooKeeper的四字命令能够帮助我们获取到 ZooKeeper的运行
+时数据, Taokeeper将这些四字命令的返回结果进行了整合,同时持久化到数据库中,
+这样一来,我们就能够可视化地看到 ZooKeeper的运行时数据,并且还能看到这些数据
+的变化趋势,包括连接数、订阅者数、数据节点总数以及收发的数据量大小等。
+8.5构建一个高可用的集群
+讲了这么多,最后我们还是要面对一个问题,那就是如何构建一个高可用的 ZooKeeper
+集群。接下来,我们着重从容灾和扩容两方面来讲解如何构建一个高可用的 ZooKeeper
+集群。
+8.5.1集群组成
+要搭建一个高可用的 ZooKeeper集群,我们首先需要确定好集群的规模。关于 ZooKeeper
+集群的服务器组成,相信很多对 ZooKeeper了解但是理解不深入的读者,都存在或曾经
+存在过这样一个错误的认识:为了使得 ZooKeeper集群能够顺利地选举出 Leader,必须
+将 ZooKeeper集群的服务器数部署成奇数。这里我们需要澄清的一点是:任意台
+ZooKeeper服务器都能部署且能够正常运行。
+那么存在于这么多读者中的这个错误认识是怎么回事呢?其实关于 ZooKeeper集群服务
+器数, ZooKeeper官方确实给出了关于奇数的建议,但绝大部分 ZooKeeper用户对这个
+建议认识有偏差。在本书前面提到的“过半存活即可用”特性中,我们已经了解了,一
+个 ZooKeeper集群如果要对外提供可用的服务,那么集群中必须要有过半的机器正常工
+作并且彼此之间能够正常通信。基于这个特性,如果想搭建一个能够允许F台机器down
+掉的集群,那么就要部署一个由2×F+1台服务器构成的 ZooKeeper集群。因此,一个
+由3台机器构成的 ZooKeeper集群,能够在挂掉1台机器后依然正常工作,而对于一个
+398第 ZooKeeper8章运维
+
+<==========================409end ==============================>
+<==========================410start==============================>
+
+由5台服务器构成的 ZooKeeper集群,能够对2台机器挂掉的情况进行容灾。注意,如
+果是一个由6台服务器构成的 ZooKeeper集群,样只能够挂掉2台机器,因为如果挂
+掉3台,剩下的机器就无法实现过半了。
+因此,从上面的讲解中,我们其实可以看出,对于一个由6台机器构成的 ZooKeeper集
+群来说,和一个由5台机器构成的 ZooKeeper群相比,其在容灾能力上并没有任何显
+著的优势。基于这个原因, ZooKeeper集群通常设计部署成奇数台服务器即可。
+8.5.2容灾
+所谓容灾,在IT行业通常是指我们的计算机信息系统具有的一种在遭受诸如火灾、水
+灾、地震、断电和其他基础网络设备故障等毁灭性灾难的时候,依然能够对外提供可用
+服务的能力。
+对于一些普通的应用,为了达到容灾标准,通常我们会选择在多台机器上进行部署来组
+成一个集群,这样即使在集群的一台或是若干台机器出现故障的情况下,整个集群依然
+能够对外提供可用的服务。
+而对于一些核心应用,不仅要通过使用多台机器构建集群的方式来提供服务,而且还要
+将集群中的机器部署在两个机房,这样的话即使其中一个机房遭遇灾难,依然能够对
+外提供可用的服务。
+上面讲到的都是应用层面的容灾模式,那么对于 ZooKeeper这种底层组件来说,如何进
+行容灾呢?讲到这里,可能不少读者会有疑问 ZooKeeper既然已经解决了单点问题,
+那么为什么还要进行容灾呢?
+单点问题
+单点问题是分布式环境中最常见也是最经典的问题之一,在很多分布式系统中都会存在
+这样的单点问题。具体地说,单点问题是指在一个分布式系统中,如果某一个组件出现
+故障就会引起整个系统的可用性大大下降甚至是处于瘫痪状态,那么我们就认为该组件
+存在单点问题。
+ZooKeeper确实已经很好地解决了单点问题。根据前面章节对 ZooKeeper技术内幕的讲
+解,我们已经可以了解到,基于“过半”设计原则, ZooKeeper在运行期间,集群中至
+少有过半的机器保存了最新的数据。因此,只要集群中超过半数的机器还能够正常工作,
+整个集群就能够对外提供服务。
+8.5构建一个高可用的集群399
+
+<==========================410end ==============================>
+<==========================411start==============================>
+
+容灾
+解决了单点问题,是否就不需要考虑容灾了呢?答案是否定的,在搭建一个高可用的集
+群的时候依然需要考虑容灾问题。正如上面讲到的,如果集群中超过半数的机器还在正
+常工作,集群就能够对外提供正常的服务。那么如果整个机房出现灾难性的事故,这
+时显然已经不是单点问题的范畴了。
+在进行 ZooKeeper的容灾方案设计过程中,我们要充分考虑到“过半”原则。也就是说,
+无论发生什么情况,我们必须要保证 ZooKeeper集群中有超过半数的机器能够正常工作。
+因此,通常有以下两种部署方案。
+三机房部署
+在进行容灾方案设计的时候,我们通常是以机房为单位来考虑问题的。假如我们有三个
+机房可以部署服务,并且这三个机房间的网络情况良好,那么就可以在三个机房中都部
+署上若干个机器来组成一个 ZooKeeper集群。
+我们假定构成 ZooKeeper集群的机器总数为N,在三个机房中部署的 ZooKeeper服务器
+数分别为N1、N2和N3,那么如果要使该 ZooKeeper集群具有容灾能力,我们可以根
+据如下算法来计算 ZooK eeper集群的机器部署方案。
+1.计算N1。
+如果 ZooKeeper集群的服务器总数是N,那么N1=(N-1)/2。注意,在Java中,
+“/”运算符会自动对计算结果进行向下取整操作。举个例子,如果N为8,那么
+N1为3,如果N为7,那么N1也为3。
+2.计算N2的可选值。
+N2的计算规则和N1非常类似,只是N2的取值是在一个取值范围内:
+N2的取值值范围是1(N-N1)2
+即如果N为8,那么N1则为3,于是N2的取值范围就是1~2,分别是1和2注
+意,1和2仅仅是N2的可选值,并非最终值如果在N2为某个可选值的时候,
+无法计算出N3的值,那么该可选值也无效。
+3.计算N3,同时确定N2的取值。
+很显然,现在只剩下N3了,可以简单地认为N3的取值就是剩下的机器数,即:
+N3=-n1-N2
+400第8章 ZooKeeper运维
+
+<==========================411end ==============================>
+<==========================412start==============================>
+
+只是N3的取值必须满足N3<N1+N2。在满足这个条件的基础下,我们遍历步
+骤2中计算得到的N2的可选值,即可得到三机房部署时每个机房的服务器数量了
+现在我们以7台机器为例,来看看如何分配三机房的机器分布。根据算法的步骤1,我
+们首先确定N1的取值为3。根据算法的步骤2,我们再确定了N2的可选值为1和2。最
+后在步骤3中,我们遍历N2的可选值,即可得到两种部署方案,分别是(3,1,3)和
+(3,2,2)。清单8-1所示的Java程序代码是对上述算法的一个简单实现。
+清单8-1.三机房部署机器分配算法
+public class HostAssignment_3
+static int n=9;
+public static void main( String args){
+int nl, n2, n3;
+n1=(n-1)/2
+int n2_max = n-n1)/2;
+for int i 1; i < n2_max; i++
+n2=;
+n3=n- n1-n2;
+if(n3>=(n+n2)){
+continue;
+System.out. println("("+n1+","
++n2+","
++n3+")")
+读者可以到本书源码包book. chapter008.85_2中下载该程序。
+双机房部署
+上面我们讲到了如何在三机房中部署 ZooKeeper集群来实现容灾。但是在实际情况中,
+很多公司的机房规模无法达到三机房的条件,因此双机房部署成为了更为现实的方案。
+但是很遗憾的是,在目前版本(截止本书出版时, ZooKeeper官方给出的最新的稳定版
+本是3.4.6)的ZooKeeper中,还没有办法能够在双机房条件下实现较好的容灾效果
+因为无论哪个机房发生异常情况,都有可能使得 ZooKeeper集群中可用的机器无法超过
+半数。当然,在拥有两个机房的场景下,通常有一个机房是主要机房(一般而言,公司
+会花费更多的钱去租用一个稳定性更好、设备更可靠的机房,这个机房就是主要机房,
+而另一个机房的租用费相对而言则廉价一些)。我们唯一能做的,就是尽量在主要机房
+中部署更多的机器。例如,对于一个由7台机器组成的 ZooKeeper集群,通常在主要机
+房中部署4台机器,剩下的3台机器部署到另一个机房中。
+8.5构建一个高可用的集群401
+
+<==========================412end ==============================>
+<==========================413start==============================>
+
+8.5.3扩容与缩容
+水平可扩容可以说是对一个分布式系统在高可用性方面提出的基本的,也是非常重要的
+一个要求,通过水平扩容能够帮助系统在不进行或进行极少改进工作的前提下,快速提
+高系统对外的服务支撑能力。简单地讲,水平扩容就是向集群中添加更多的机器,以提
+高系统的服务容量。
+很遗憾的是, ZooKeeper在水平扩容方面做得并不十分完美,需要进行整个集群的重启。
+通常有两种重启方式:一种是集群整体重启,另一种是逐台进行服务器的重启。
+整体重启
+我们先来看第一种集群整体重启的方式。所谓集群整体重启,就是先将整个集群停止,
+然后更新 ZooKeeper的配置,然后再次启动。如果在你的系统中, ZooKeeper并不是一
+个非常核心的组件,并且能够允许短暂的服务停止(通常是几秒钟的时间间隔),那么
+,。,
+不妨选择这种方式。在整体重启的过程中,所有该集群的客户端都无法连接上集群。等
+到集群再次启动后,这些客户端就能够自动连接上注意,整体重启前建立起的客户
+端会话,并不会因为此次整体重启而失效,也就是说,在整体重启期间花费的时间将不
+计入会话超时时间的计算中。
+逐台重启
+第二种逐台重启的方式似乎更适合绝大多数的实际场景。在这种方式中,每次仅仅重启
+集群中的一台机器,然后逐台对整个集群中的机器进行重启操作。这种方式可以在重启
+期间依然保证集群对外的正常服务。
+8.6日常运维
+现在我们来看看,对于一个已经部署起来的 ZooKeeper系统,应该如何进行运维与监控。
+首先从数据与日志文件入手。
+8.6.1数据与日志管理
+在5.1节中,我们已经讲解了如何部署一个 ZooKeeper集群。在提到 ZooKeeper的数据
+与事务日志文件时,我们了解到 ZooKeeper服务器会有 dataDir和 dataLogDir两个
+目录,分别用于存储快照数据和事务日志。正常运行过程中, ZooKeeper会不断地把快
+照数据和事务日志输出到这两个目录,并且如果没有人为操作的话,默认情况下
+402第8章 ZooKeeper运维
+
+<==========================413end ==============================>
+<==========================414start==============================>
+
+ZooKeeper自己是不会清理这些文件的,需要运维人员来进行清理。在本节中,我们将
+介绍三种清理日志的方法。
+纯 Shell脚本进行清理
+Shell脚本的清理方式,是运维人员最常用的方式,通常是写一个删除历史文件的脚本,
+每天定时执行即可,图8-27所示是一份相对简单但是实用的清理脚本。
+Is -t $datal.ogDir/log. .I tall n +scount xargs
+I tail scount xan
+图827.历史快照数据和事务日志文件清理脚本
+在图8-27所示的脚本中,我们指定了快照数据、事务日志和 ZooKeeper运行时日志文
+件的目录,同时还指定了目录中需要保留的文件个数为60。通常,我们可以将该脚本的
+执行任务配置到 crontab中,并设置为每天凌晨2点执行一次即可。
+使用清理工具: PurgeTxnLog
+ZooKeeper提供了一个工具类org. apache. zookeeper. server. PurgeTxnLog,
+实现了一种较为简单的文件清理策略,运维人员可以使用该工具进行历史文件的清理,
+使用方法如清单8-2所示。
+清单8-2.使用 PurgeTxnLog工具类进行历史快照数据和事务日志文件的清理
+java-cp zookeeper-3.4.5.jar: lib/slf4j-api-1.6.1.jar: lib/slf4j-log4j12-1.6.1.jar:
+lib/log4j-1.2. 15.jar: conf org. apache zookeeper. server. PurgeTxnLog /home/admin/
+taokeeper/zk_ data /home/admin/taokeeperzk_data -n 15
+在 ZooKeeper根路径下执行上述命令后,就可以进行历史快照数据和事务日志文件的清理
+了。在该示例中,会至多保留15个快照数据文件和相对应的事务日志文件,如图8-28所示。
+注意,为了避免 ZooKeeper运维人员的误操作,同时也是 ZooKeeper进行数据恢复的需
+要, PurgeTxnLog工具限制了至少需要保留3个快照数据文件。
+6日常运维403
+
+<==========================414end ==============================>
+<==========================415start==============================>
+
+图8-28.使用清理工具: PurgeTxnLog
+使用清理脚本: zkCleanup.sh
+在上面的介绍中,我们已经了解了如何通过 PurgeTxnLog工具来进行事务日志和快照数
+据的清理。事实上,在 ZooKeeper的发布包中已经为用户准备了脚本: zkCleanup.sh用
+来封装清理工具 PurgeTxnLog,在实际使用上也更简便,具体的使用方法如图8-29所示:
+Removing file:2014-11-1912:01:27
+Removing file:2014-11-1912:17:17
+Removing file:2014-11-1912:08:54
+Removing file:2014-11-1912:17:18
+Removing file:2014-11-1912:08:5
+Removing file: 2814-11-19 12: 01: 28 ../
+图8-29.使用清理脚本: zkCleanup
+自动清理机制
+从3.4.0版本开始, ZooKeeper提供了一种自动清理历史快照数据和事务日志文件的机制,使用
+方式是通过配置 autopurge. snapRetainCount和 autopurge. purgeInterval这两
+个参数来实现定时清理,详见8.1节中对这两个参数的讲解。
+8.6.2 Too many connections
+在8.1.2节中,我们曾经讲解到 maxClientCnxns参数,该参数用于设置
+服务器运行时允许单个客户端机器创建的最大连接数。在 ZooKeeper运行过程中,针对
+每一个和自己创建连接的客户端, ZooKeeper都会将其记录下来,如果超过了上面设定
+的参数值,那么服务器就会拒绝与该客户端的连接。注意,触发了 ZooKeeper服务端的
+“拒绝创建连接”后,在参数值范围内创建的客户端连接不会受到影响,只会拒绝超出
+部分的客户端连接请求。同时,一旦出现上述情况,服务器会打印出如图8-30所示的
+警告日志。
+图8-30中显示的就是在我们配置了 maxClientCnxns参数为15的条件下,出现了too
+many connections的状况。
+404第 ZooKeeper8章运维
+
+<==========================415end ==============================>
+<==========================416start==============================>
+
+Factory: 0 .0.0.0/0.
+0.0.0:2181:N
+32012-12-15
+ory:0.0.0.0/0
+0.0.0:218
+tions fro
+19
+2012-12-1508:38:04,644 WARNNTOServercxn. Facrory:0.0.0.0/0
+0.0.0:2
+orye209] -Too many connections tro
+图8-30.出现Too_manyconnections情况
+8.6.3磁盘管理
+在前面几章的讲解中,相信许多读者都已经了解到, ZooKeeper对于磁盘的依赖非常严
+重。在 ZooKeeper中,但凡对 ZooKeeper数据状态的变更,都会以事务日志的形式写入
+磁盘,并且只有当集群中过半的服务器已经记录了该事务日志后,服务端才会给予客户
+端响应。另一方面, ZooKeeper还会定时将内存数据库中的所有数据和所有客户端的会
+话信息记录进行快照,保存到磁盘上的数据快照文件中去。明白这点之后,你就会意识
+到磁盘的吞吐性能对于 ZooKeeper的影响了磁盘的O性能直接制约着ZooKeeper
+每个更新操作的处理速度。为了尽量减少 ZooKeeper在读写磁盘上的性能损失,不仿试
+试下面说的点。
+使用单独的磁盘作为事务日志的输出目录。一方面,事务日志的写性能对 ZooKeeper
+处理客户端请求,尤其是更新操作的处理性能影响很大。另一方面, ZooKeeper的
+事务日志输出是一个顺序写文件的过程,因此本身性能是非常高的,所以尽量保证
+不要和应用程序共享一块磁盘,以避免对磁盘的竞争。作者所在的公司,就将
+ZooKeeper集群的事务日志和快照数据分别配置在两块单独挂载的磁盘上。
+尽量避免内存与磁盘空间的交换。如果希望 ZooKeeper能够提供完全实时的服务,
+那么就不能出现此类内存与磁盘空间交换的现象。因此在分配JM堆大小的时候
+一定要非常小心。
+小结
+本章主要面向 ZooKeeper的运维人员,从 ZooKeeper的参数配置、四字命令、JMX管理、
+监控以及日常运维等方面,向读者介绍了如何构建一个高可用的 ZooKeeper集群书中
+虽然涉及了很多 ZooKeeper运维相关的内容,但无法涵盖所有 ZooKeeper的运维工作和
+经验,也无法处理读者可能碰到的所有实际问题,很多运维经验和注意点都需要依赖于
+读者自己平时日常工作中不断的实践总结。
+小结405
+
+<==========================416end ==============================>
+<==========================417start==============================>
+
+附录A
+Windows平台上部署 ZooKeeper
+在5.1.2章节中,我们已经讲解了如何在 Linux平台上进行 ZooKeeper的部署与运行。
+由于 ZooKeeper的整个系统是基于Java平台构建的,因此其具备了很好的平台移植性,
+接下我们将以通过在 Windows平台上搭建一个 ZooKeeper伪集群为例来说明如何在
+Windows平台上部署与运行 ZooKeeper
+第1步准备Java运行时环境
+和在 Linux平台上一样,第一步还是需要准备ava运行时环境。
+第2步下载 ZooKeeper安装包
+和 Apache等开源项目一样, ZooKeeper针对不同的平台使用的安装包是一样的。
+因此读者到 zookeeper http: //zookeeper: apache. org/releases. html的下载面tp:keperapache.org/relases.hml下载指
+定版本的 ZooKeeper安装包即可。下载后是一个文件名为zookeeper-x.x.xtar.gz
+的压缩文件,解压该文件,例如“dzookeeper--bin”目录下。
+另外,由于我们是要在 Windows平台上搭建伪集群,因此需要拷贝三份 ZooKeeper
+安装包,同时约定在下文中,用%ZKHOME11%(d:zookeeper-bin-peerl1)代表
+ZooKeeper集群中的一个服务器目录。
+如图A-1所示。
+406
+
+<==========================417end ==============================>
+<==========================418start==============================>
+
+文件编看工帮
+组织打开打印建文件夹
+zookeeper-bin
+名称
+类型
+dpeerl
+dat
+文件夹
+s bin
+READMEtct TXT文件
+ddata
+Ceanup
+zkCleanup.sh Shell Script
+conf
+c. icmd Windows命令脚本
+contrib
+zkClish Shell Script
+dist-maven
+ke.cmd Windows本
+docs
+zkEnv.sh
+Shell Script
+zkServer.cmd Windows令牌本
+recipes
+zkServer.sh Shell Script
+sre
+peer2
+peer3
+zkEnv.cmd
+修改2012/10/1153
+Windows命令脚本大1.30B
+图A-1. Windows平台上的 ZooKeeper安装目录
+第3步配置文件zoo.cfg
+和 Linux平台上的配置方式一致,第一次部署 ZooKeeper服务器的时候,需要
+将%ZKHOME1%onf目录下的“zoo_samplecfg文件重命名为“zoo.cfg,并且
+按照如下步骤进行配置:
+tickTime=2000
+dataDir=./data
+#不同的peer上,这个端口需要更改
+clientPort=2181
+initLimit=5
+syncLimit=2
+server.1=127.0.0.1:2777:3777
+server.2=127.0.0.1:2888:3888
+server.3=127.0.0.1:2999:3999
+以上是在同一台机器上,通过配置不同的端口来实现伪集群的部署方式。同时将
+ZooKeeper的数据目录配置成“d:zookeeper-bin-peerl\bindata
+第4步创建myid文件
+在 dataDir所配置的目录下,创建一个名为“myid”的文件,在该文件的第一行写
+一个数字,使其与“zoo.cfg”中当前机器的编号对应。
+附录 Windows平台上部署 ZooKeeper407
+
+<==========================418end ==============================>
+<==========================419start==============================>
+
+第5步按照相同的步骤,在其他peer目录都配置上“zoocfg和“myid”文件
+第6步双击每个peer的bin目录下的“zkServer.cmd文件来启动服务器
+第7步验证服务器。
+服务器启动完成后,如果读者的操作系统上安装了 Telnet客户端,那么可以通过
+Telnet方式登录 ZooKeeper的2181端口,也可以双击bin目录下的“zkCli.cmd
+文件来连接本地的 ZooKeeper服务器以验证是否启动成功。如图A-2所示。
+图A2.使用 zkCli.cmd连接 ZooKeeper服务器
+408附录 Windows平台上部署 ZooKeeper
+
+<==========================419end ==============================>
+<==========================420start==============================>
+
+附录B
+从源代码开始构建
+ZooKeeperApache是一个上顶级的开源软件,全世界工程师都可以阅读并向其贡献自己
+的代码。当然贡献代码必须是在本地编译通过的 ZooKeeper源代码。那么,如何在本地
+进行 ZooKeeper的运行和调试呢?下面,我将以3.4.6版本的 ZooKeeper为例来讲解如
+何将 ZooKeeper的源代码导入到 Eclipse中进行开发调试,并构建出一个完整的发布包。
+第1步准备JDK和ANT环境
+ZooKeeper是一个使用ava语言编写的,基于Ant进行构建的开源软件,因此准备
+好JDK和ANT环境是必要的步骤,但是此处不再展开讲述这两个基础软件的具体
+安装过程了,读者可以分别到JDK和ANT的官方网站上下载并进行安装。本
+书分别使用1.7.051-b13版本的JDK和1.9.3版本的ANT。
+第2步下载源代码
+读者可以到 ZooKeeper官方的SVN仓库上下载各发行版本的代码,其SVN仓库路
+径为 :http://svn.apache.org/repos/asf/zookeeper/tags/, .4.6 ZooKeeper本书以3.4.6版本的zookeeper
+的代码为例进行讲解。完成源代码下载后,放置到一个指定目录,例如
+“he/nileaderzookeeper-source,目录结构如图B-1所示。
+注:JDK的下载官方页面http:/woracleom/1《JDKlfpYmowudconhnrwrwaujasdowloadindcthm《javase/downloads/index.html
+注 2:  ant: http: //ant.apache.org/bindownload.cgi的下载官方页面http:an.apache.org/bindownload.g
+注3:不同版本的JDK和ANT在兼容性方面没有太大的问题。
+409
+
+<==========================420end ==============================>
+<==========================421start==============================>
+
+telea
+设
+主义
+计算
+网络
+NOTICE.txt
+README
+packaging txt
+图B-1. ZooKeeper源代码目录结构4
+第3步 ant执行 eclipse命令进行构建
+进入到 release--3.4.6目录中,执行命令:
+ant eclipse
+之后进行源代码的编译及依赖包的下载,如果在构建的最后阶段出现了类似下面的
+提示语:
+BUILD SUCCESSFUL
+Total time: 2 minutes 32 seconds
+那么恭喜你,构建成功了,现在已经是一个符合规范的 Eclipse工程了。
+第4步将工程导入 Eclipse
+打开 Eclipse,选择“File→Import-Existing→ Projects into Workspace",如图B-2所
+示。
+注4:本书以 Ubuntu平台为例来讲解, Windows平台上的构建过程是一样的。
+410附录B从源代码开始构建
+
+<==========================421end ==============================>
+<==========================422start==============================>
+
+simport
+Select
+Create new projects from anarchive file or directory.
+select an import source
+Eype filter text
+General
+.Archive File
+Existing Projects into Workspace
+File System
+Preferences
+Git
+<Back
+Cancet
+图B-2.将工程导入 Eclipse
+然后选择工程目录:“/home/nileader/zookeeper-sc-/release--3.4.6,如图B-3所示。
+Import
+Import Projects
+Select a directory to search for existing Eclipse projects.
+Select root directory:
+Browse
+Select archive fil
+Projects:
+Zookeepe
+working sets
+Add pre
+warkings
+图B-3.选择工程目录
+最后点击“Finish”即可完成工程导入。
+附录B从源代码开始构建411
+
+<==========================422end ==============================>
+<==========================423start==============================>
+
+第5步解决编译问题
+完成工程导入后,可能会出现如图B-4所示的编译错误。
+图B-4.出现编译错误
+针对这个错误的解决方法是修改该工程的“Compiler compliance level”为1.6,如
+图B-5所示。
+图-5.修改 Compiler compliance level为1.6
+412附录B从源代码开始构建
+
+<==========================423end ==============================>
+<==========================424start==============================>
+
+完成以上5个步骤后,就完成 ZooKeeper的源代码导入,读者就可以根据自己的需
+求进行修改。
+第6步 ZooKeeper运行
+读者可以在 Eclipse将 ZooKeeper启动起来,方法是找到启动类:orgapache
+zookeeper server. ZooKeeperServerMain,然后配置启动参数
+如图B-6所示。
+Run Configuratlons
+Create, manage, and run configurations
+Runa Java application
+Name: ZooKeeperserverMain
+Main Arguments JRE Classpath
+Program arguments:
+2181/tmp/zk_datal
+v
+Marguments:
+图B6.配置启动参数
+从上图中我们可以看出,需要为 ZooKeeper启动类配置启动参数:对外服务端口
+和数据存储目录。之后点击“Run”即可将ZooKeeper服务器启动。
+关于 ZooKeeper的启动验证和5.1.2章节中提到的验证方法是一致的,这里不再赘
+述。
+第7步打包
+如果读者已经完成了代码修改,就可以重新打包来得到一个可运行的 ZooKeeper
+了。进入到“release--3.4.6”目录中,执行命令:
+ant
+即可在 build目录先得到一个更新后的“zookeeper-3-.6jar”文件了。
+附录B从源代码开始构建413
+
+<==========================424end ==============================>
+<==========================425start==============================>
+
+附录C
+各发行版本重大更新记录
+大概是从2010年下半年起,随着 ZooKeeper本身的日趋稳定,同时也是得益于大数据
+时代的到来、 Hadoop和 Hbase等越来越多基于 ZooKeeper构建的高可用大型分布式系
+统的出现, ZooKeeper被越来越多的人所关注。同年3月, ZooKeeper发布了3.3系列版
+本,并于11月成功从 Hadoop子项目中分离出来,成为了 Apache的顶级项目,标志着
+ZooKeeper成为了一个真正可以被广泛使用的分布式协调框架。
+时至今日,将近4年时间过去了, ZooKeeper发布了很多版本,目前被广泛使用的主流
+版本是3.3和3.4这两个系列版本。下面,我将针对这两个系列版本,对 ZooKeeper的
+各发行版本的重大更新记录作一个说明。
+3.3系列
+3.3系列版本是目前使用最广泛的版本。在该版本中, ZooKeeper添加进入了“Observer
+这一新型的服务器角色,同时添加了“四字命令功能”和“JMX管理”3.3系列的各发
+行版本的重大更新记录如下表所示。
+3.3.0版本
+3.3.0版本于2010年3月25日发布,其主要重大更新如表C-1所示。
+414
+
+<==========================425end ==============================>
+<==========================426start==============================>
+
+表C-1.3.3.0版本重大更新记录
+ISSUE
+说明
+ZoOKEEPER-368添加新的服务器角色: Observer,其不参与 Leader的选举和事务请求的投票
+过程,但支持对非事务请求的处理。
+服务端支持对会话超时时间限制(minSession Timeout和 maxSessionTimeout
+ZOOKEEPER-601
+的配置
+ZOOKEEPER-496
+添加工具 zktreeutil(Zookeeper Tree Data Utility)用于对 ZooKeeper内存数
+据进行导入、导出和增量更新等。
+ZoOKEEPERZooInspector-678添加工具,用于查看和更新 ZooKeeper内存数据库中的数据。
+3.3.1版本
+3.3.1版本于2010年5月17日发布,其主要重大更新如表C-2所示。
+表C-2.3.3.1版本重大更新记录
+ISSUE
+说明
+ZOOKEEPERObserver-764修复服务器参与 Leader选举的Bug
+3.3.2版本
+3.3.2版本于2010年11月11日发布,其主要重大更新如表C-3所示。
+表C-3.3.3.2版本重大更新记录
+ISSUE
+说明
+ZOOKEEPER--794统一客户端针对同步和异步接口下连接断开后的处理
+ZOOKEEPER-E-795修复客户端会话超时退出后,线程未退出的Bug
+ZoOKEEPER--844客户端添加对 AuthFailed事件的处理与通知。
+ZOOKEEPER-881
+修复服务器启动时期从磁盘中重复加载数据的Bug
+ZOOKEEPER--904修复 Super模式下不恰当的ACL变更导致 Super模式自身不生效的Bug
+3.3.4版本
+3.3.4版本于2011年11月26日发布,其主要重大更新如表C-4所示。
+注1: ZooKeeper采用JRA来进行项目管理和 ISSUE跟踪,读者可以到 Apache的JIRA官网查看该
+issue: https: //ssues. apache.org/jira/browse/zo.的详细记录tp:/isesapach.g/ibrowse/oeePER-368本附录中的所有
+ISSUE说明均可以在JIRA官网上找到,请读者自行查看。
+附录C各发行版本重大更新记录415
+
+<==========================426end ==============================>
+<==========================427start==============================>
+
+表C-4.3.3.4版本重大更新记录
+说明
+ZOOKEEPER--1239允许用户配置 ZooKeeper在进行事务日志 fsync操作时消耗时间的报警值
+ZOOKEEPER-ForceSync-1087修复参数设置不生效的Bug
+ZOOKEEPER-1049修复客户端大规模连接断开后会话失效,导致其余正常客户端的会话心跳检
+测(PING请求)受到影响导致会话失效的Bug
+3.4系列
+3.4系列版本是目前功能最丰富,也是最成熟的 ZooKeeper版本在该版本中, ZooKeeper
+引入了 Netty这一成熟的高性能NO框架来进行客户端连接的处理,并添加了一系列运
+维机制和工具。3.4系列的各发行版本的重大更新记录如下表所示。
+3.4.0版本
+3.4.0版本于2011年11月22日发布,其主要重大更新如表C-5所示。
+表C-5.3.4.0版本重大更新记录
+ISSUE
+说明
+ZOOKEEPER-733
+引入 Netty作为服务端的NO实现。
+ZOOKEEPER--909以接口形式剥离出 ClientCnxn相关逻辑为后续添加 Netty实现做准备
+支持批处理操作接口 multi,允许客户端一次性提交多个事务操作,这些
+ZOOKEEPER-965
+操作具有原子性,即要么全部被成功执行,要么全部不执行
+ZOOKEEPER-1030
+将单个客户端与单台服务器之间最大并发连接数(maxClientCnxns)的默
+认值从10提高到60
+ZoOKEEPER--1153废弃 LeaderElection和 AuthFastLeaderElection两种 Leader选举算法。
+ZOOKEEPER-729
+开放递归删除 ZNode的AP接口。
+ZOOKEEPER-938
+添加对SASL权限认证的支持
+ZOOKEEPER-850
+采用slf4j来替换之前的log4j日志系统
+ZOOKEEPER-874
+对事务日志进行恢复过程中,通过回调 PlayBackListener监听器来实现缓
+存事务提交记录,以便集群其他机器快速同步。
+ZOOKEEPER-1107
+添加自动清理历史快照数据和事务日志文件的机制。
+ZOOKEEPER-773
+添加日志可视化工具。
+ZOOKEEPER-737
+改造四字命令处理模型,采用命令线程方式。
+ZOOKEEPER-744
+添加四字命令“mntr”,用于对 ZooKeeper服务器监控。
+ZOOKEEPER--808添加浏览器端 ZooKeeper管理与控制工具:huebrowser
+ZOOKEEPER-769
+修复 Observer参与事务请求投票的Bug
+ZOOKEEPER-795
+修复会话失效后,客户端 EventThread线程为退出的Bug
+ZoOKEEPER-ZNode-1055去除对重复的ACL设置。
+3.4.4版本
+3.4.4版本于2012年9月23日发布,其主要重大更新如表C-6所示。
+416附录C各发行版本重大更新记录
+
+<==========================427end ==============================>
+<==========================428start==============================>
+
+表C-6.3.4.4版本重大更新记录
+ISSUE
+说明
+ZOOKEEPER-1344批处理操作接口muli添加对的支持
+ZOOKEEPER-1321通过JMX和四字命令方式对外开放服务器连接数信息
+ZOOKEEPER-1377添加快照数据可视化工具: SnapshotFormatter
+zkCli添加对 InvalidACLException NoAuthExcep、 BadArgumentsException
+ZOOKEEPER--1307和 Bad VersionException异常的捕获,以便在出现以上异常情况下,用户依然
+能够正常使用 zkCli
+ZOOKEEPER--1465修复集群内部增量和全量数据同步缺陷,减小在大数据量场景下的集群恢复
+时间。
+3.4.6版本
+3.4.6版本于2014年3月10日发布,其主要重大更新如表C-7所示。
+表C-7.3.4.6版本重大更新记录
+ISSUE
+说明
+ZOOKEEPER--1459修复在单机模式下启动的 ZooKeeper,退出时未关闭事务日志文件流导致无
+法删除相关文件的Bug
+ZOOKEEPER-1808在 FastLeaderElection选举过程的消息中添加 version字段,以便将来能够区
+分出不同版本的选举消息。
+附录C各发行版本重大更新记录417
+
+<==========================428end ==============================>
+<==========================429start==============================>
+
+附录D
+ZooKeeper源代码阅读指引
+如果你是一名开源爱好者的话,那么相信你一定热衷于研读各种有趣的开源软件,尤其
+是那些被广泛使用的 Apache顶级项目,因为它们更能让你在代码阅读之后领略到其强
+大功能背后代码组织上独具匠心的地方。下面,我们将向读者带来 ZooKeeper的源代码
+阅读指引,帮助读者更好地学习 ZooKeeper
+首先,我们看一下 ZooKeeper源代码的整体结构,如图D-1所示。
+File Edit source Refactor Naugate search projet Ro
+t
+Package Explorer Ju Junit
+eepe
+*JRE System Library Didk 1.7.0_51]
+src/java/main
+src/java/generated
+src/java/test
+srcjava/systest
+Referenced Libraries
+bin
+build
+conf
+'adocs
+gsrc
+build.xml
+CHANGES.
+ilvy.xml
+ettings.
+ivysettings.xml
+LICENSEtxt
+NOTCEtxt
+README_packaging.txt
+READMEtxt
+图D-1. ZooKeeper源代码整体结构
+418
+
+<==========================429end ==============================>
+<==========================430start==============================>
+
+上图中,我们可以大致看到, ZooKeeper的源代码结构主要由Java源代码、测试代码、
+可执行脚本、配置文件、文档、Ant配置和项目说明等6大部分组成,其中比较核心的
+部分包括:
+src/java/main
+这是一个标准的Java工程都会有的目录,其中包含了 ZooKeeper工程的所有java
+源代码。
+src/java/generated
+这个目录中的文件,都是初次进行 ZooKeeper源码编译构建过程中自动生成的
+实体类和协议层的类定义。在本书7.2.3章节中,我们已经对 ZooKeeper的Jute
+组件及其相关的类生成机制进行了详细讲解,这里不再展开。
+src/java/test, src/java/systest
+这两个目录中都是 ZooKeeper的测试代码。
+.bin
+bin目录中都 ZooKeeper是一些的可执行脚本,在5.1.3章节中已经对这些脚本进
+行了讲解。
+●conf
+conf目录中存放的都是 ZooKeeper的配置文件,包括“zoo.cfg”和“log4”配置
+文件。
+客户端AP设计与实现
+ZooKeeper的客户端AP和服务端程序包含在同一个发行包中,即zookeeper-n.n.n.jar”,
+这一点也是经常被广大 ZooKeeper用户抱怨的地方。如果你有兴趣,可以研究一下
+“org.apache. zookeeper. ZooKeeper”这个类,其中包含了 ZooKeeper所有的客户端AP设
+计与实现。
+当然,除此之外,在5.2章节中我们提到, zkCli也是一个简易的客户端程序(事实上是
+一个脚本),其对应的就是“org. apache.zookeeper. ZooKeeperMain这个ava类,建议
+读者可以首先从这个类开始来了解如何使 ZooKeeper用客户端apl
+序列化与协议
+序列化与协议层的定义是 ZooKeeper网络通信相关逻辑最核心的部分,其使用Jute组件
+来进行序列化和反序列化,这在7.2章节中已经进行了详细的讲解,读者也可以在
+附录 ZooKeeper源代码阅读指引419
+
+<==========================430end ==============================>
+<==========================431start==============================>
+
+“org.apache.jute”这个包中进行更为深入的了解。
+网络通信
+ZooKeeper客户端的网络通信主要“org.apachezookeeper ClientCnxnorg.apache
+zookeeper. ClientCnxnSocket和默认的实现ogapache.zookeeper. ClientCnxnSocketNIO
+3个类组成,与之对应的服务端网络通信层有两套实现,分别是 ZooKeeper自己实现的
+NIO和 Netty实现,对应以下4个类:
+.org.apache. zookeeper.server. NIOServerCnxn
+.org.apache. zookeeper. server. NIOServerCnxnFactory
+.org. apache. zookeeper. server. NettyServerCnxn
+org.apache.zookeeper.server. NettyServerCnxnFactory
+通过这几个类的阅读足以让你了解 ZooKeeper客户端和服务端之间是如何进行会话建立
+与维持、请求发送与响应接收等一系列网络通信过程。
+Watcher机制
+Watches机制是 ZooKeeper的一大特色其构建了整个 ZooKeeper服务端和客户端的事
+件通知机制,如果你对这个有兴趣,那么可以通过阅读以下4个类来更好地理解
+ZooKeeper的 Watcher机制。
+.org.apache.zookeeper. Watcher
+org.apache. zookeeper. WatchedEvent
+.org.apache. zookeeper. Client WatchManager
+.org.apache.zookeeper. ZooKeeper.ZKWatchManager
+数据与存储
+虽然 ZooKeeper并不是一个典型的分布式存储系统,但是其内部数据与存储相关的实现
+逻辑,尤其是事务日志和数据快照技术,是其保证分布式数据一致性的核心所在。读者
+可以结合7.9节讲解的内容来阅读“org. apache. zookeeper server persistence”中的代码和
+org.apache. zookeeper.server.quorum. LearnerHandler”中的网络通信协议来了解其更多的
+420附录 ZooKeeper源代码阅读指引
+
+<==========================431end ==============================>
+<==========================432start==============================>
+
+细节。
+请求处理链
+在7.8章节中讲解了 ZooKeeper服务端的请求处理细节,其中提到的请求处理链都
+是
+orgg.apache.zookeeperserver. RequestProcessor”接口的实现类,读者可以按照
+PrepRequestProcessor."ProposalRequestProcesso和“SyncRequestProcessor等请求
+处理顺序来逐个阅读其代码实现。
+Leader选举
+众所周知, Leader选举是 ZooKeeper中最核心的技术之一,感兴趣的读者,可以对照7.6
+节中讲解的内容,并结合以下几个核心类来更进一步地了解其技术内幕。
+选举算法的接口定义
+org. apache.zookeeper.server.quorum. Election
+选举算法的3种实现:
+org.apache. zookeeper. server.quorum. AuthFastLea
+org.apache.zookeeper.server. quorum. LeaderElection
+org.apache. zookeeper.server. quorum. FastLeaderElection
+网络通信
+org.apache.zookeeper.server.quorum.QuorumCnxManager
+服务端各角色工作原理
+ZooKeeper服务端通常是由集群组成,并且一般分为 Leader、 Follower和 Observer三种
+角色,在7.7节中,我们已经讲解了各个服务器角色的工作职责及其相互之间的协作机
+制,读者可以结合以下几个关键类来更好地理解 ZooKeeper的服务端工作原理:
+集群模式下服务器基本功能定义
+org.apache.zookeeper. server. ZooKeeperServer
+org.apache.zookeeper, server.quorum. QuorumZooKeeperServer
+3种服务器角色
+org.apache. zookeeper. server. quorum. LeaderZooKeeperServer
+org.apache. zookeeper. server. quorum. FollowerZool
+org.apache.zookeeper.server.quorum.ObserverZooKeeperServer
+附录 ZooKeeper源代码阅读指引421
+
+<==========================432end ==============================>
+<==========================433start==============================>
+
+●ZAB协议相关
+org.apache.zookeeper.server.quorum. Leader
+org.apache.zookeeper.server.quorum.Follower
+org.apache.zookeeper. server.quorum. LearnerHandler
+其中 Leader和 LearnerHandler是在 Leader服务器上运行的, Follower是在 Follower服
+务器上运行的。重点需要查看的是“Leaderle和“Follower. follow Leader”方法。
+权限认证
+插件化的权限认证扩展体系是 ZooKeeper的一大特色,默认提供了“Digest、“IP”和
+“SASL”三种权限认证模式,开发人员可以在此基础上实现自己的权限认证方式。了解
+更多可以查看“org apache. zookeeper. server.auth”包中的类。
+JMX相关
+在8.3节中,我们讲到了 ZooKeeper使用JMX来帮助运维人员对 ZooKeeper服务器进行
+监控和管理,读者可以到“org. apache.zookeeper jmx包中查看其实现细节
+静态变量定义
+在“org. apache. zookeeper.ZooDefs”类中定义了很多静态变量,主要包括:操作类型、
+权限控制、ACL定义相关的静态变量。
+ZooKeeper异常定义
+在日常 ZooKeeper使用过程中,经常会碰到诸如:“ConnectionLossException、
+“NoNodeException""和“NoAuthException”等程序异常。实际上,ZooKeeper中的异常
+定义远不止这些,如果你有兴趣研究其他异常以及它们分别对应的错误码,那么可以从
+org.apache.zookeeper. Keeper Exception”类开始。
+422附录 ZooKeeper源代码阅读指引
+
+<==========================433end ==============================>
